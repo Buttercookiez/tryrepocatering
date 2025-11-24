@@ -1,0 +1,57 @@
+// src/App.jsx
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Admin Pages
+import Dashboard from './pages/Dashboard/Dashboard';
+import Calendar from './pages/Events/Calendar';
+import Finance from './pages/Finance/Financials';
+// This maps to your Bookingdetails.jsx file
+import BookingsAndProposals from './pages/bookingdetails/Bookingdetails'; 
+import Inventory from './pages/Inventory/Inventory';
+import Kitchen from './pages/Kitchen/Kitchenprep';
+
+// Styles
+import './App.css';
+
+// --- Simple Placeholder Component ---
+const AdminPlaceholder = ({ title }) => (
+  <div className="flex h-screen w-full items-center justify-center bg-[#FAFAFA] text-stone-900">
+    <div className="text-center">
+      <h1 className="font-serif text-4xl mb-4 italic">{title}</h1>
+      <p className="text-xs tracking-widest uppercase text-stone-500">Module Under Development</p>
+      <a href="/dashboard" className="block mt-8 text-xs underline hover:text-[#C9A25D]">Back to Dashboard</a>
+    </div>
+  </div>
+);
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        {/* --- Redirect root to dashboard --- */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* --- Admin/Management Routes --- */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/events/calendar" element={<Calendar />} />
+        <Route path="/inventory/inventory" element={<Inventory />} />
+        <Route path="/finance" element={<Finance />} />
+        <Route path="/kitchen" element={<Kitchen />} />
+        
+        {/* FIXED LINE BELOW: Use the imported name "BookingsAndProposals" */}
+        <Route path="/bookings" element={<BookingsAndProposals />} /> 
+        
+        {/* Placeholders for remaining Sidebar links */}
+        <Route path="/clients" element={<AdminPlaceholder title="Client Records" />} />
+        <Route path="/tasks" element={<AdminPlaceholder title="Task Manager" />} />
+        <Route path="/venue-status" element={<AdminPlaceholder title="Venue Status" />} />
+        <Route path="/finance/reports" element={<AdminPlaceholder title="Profit Reports" />} />
+
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;

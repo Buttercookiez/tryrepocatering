@@ -1,0 +1,123 @@
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom'; 
+import { 
+  LayoutGrid, Calendar, Users, CheckSquare, MapPin, 
+  Package, DollarSign, TrendingUp, ChefHat, ChevronLeft, ChevronRight,
+  BookOpen // Added Icon for Bookings
+} from 'lucide-react';
+
+const Sidebar = ({ sidebarOpen, setSidebarOpen, theme }) => {
+  const navigate = useNavigate(); 
+  const location = useLocation(); 
+  
+  // Toggle Function that saves to LocalStorage
+  const toggleSidebar = () => {
+    const newState = !sidebarOpen;
+    setSidebarOpen(newState);
+    localStorage.setItem('sidebarState', newState); 
+  };
+
+  // Navigation Map
+  const menuGroups = [
+    {
+      label: "Management",
+      items: [
+        { id: 'Overview', icon: LayoutGrid, label: 'Dashboard', path: '/dashboard' },
+        { id: 'Bookings', icon: BookOpen, label: 'Booking Details', path: '/bookings' }, // <--- ADDED HERE
+        { id: 'Calendar', icon: Calendar, label: 'Events Calendar', path: '/events/calendar' },
+        { id: 'Clients', icon: Users, label: 'Client Records', path: '/clients' },
+        { id: 'Tasks', icon: CheckSquare, label: 'Task Manager', path: '/tasks' },
+      ]
+    },
+    {
+      label: "Operations",
+      items: [
+        { id: 'Kitchen', icon: ChefHat, label: 'Kitchen & Prep', path: '/kitchen' },
+        { id: 'Inventory', icon: Package, label: 'Inventory', path: '/inventory/inventory' },
+        { id: 'Venue', icon: MapPin, label: 'Venue Status', path: '/venue-status' },
+      ]
+    },
+    {
+      label: "Finance",
+      items: [
+        { id: 'Finance', icon: DollarSign, label: 'Financials', path: '/finance' },
+        { id: 'Reports', icon: TrendingUp, label: 'Profit Reports', path: '/finance/reports' },
+      ]
+    }
+  ];
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <aside className={`${sidebarOpen ? 'w-72' : 'w-20'} flex-shrink-0 flex flex-col border-r ${theme.border} ${theme.sidebarBg} transition-all duration-500 z-30 relative`}>
+      
+      {/* Toggle Button */}
+      <button 
+        onClick={toggleSidebar}
+        className={`absolute -right-3 top-10 w-6 h-6 rounded-full border ${theme.border} ${theme.cardBg} flex items-center justify-center z-50 hover:text-[#C9A25D] transition-colors shadow-sm`}
+      >
+        {sidebarOpen ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
+      </button>
+
+      {/* Logo */}
+      <div className={`h-24 flex items-center ${sidebarOpen ? 'px-8' : 'justify-center'}`}>
+        {sidebarOpen ? (
+          <div onClick={() => navigate('/')} className="cursor-pointer">
+            <span className="text-[10px] tracking-[0.3em] uppercase text-[#C9A25D] font-bold block mb-1">Admin</span>
+            <h1 className="text-3xl font-serif tracking-wide uppercase">Mapo's</h1>
+          </div>
+        ) : (
+          <h1 className="text-2xl font-serif text-[#C9A25D] cursor-pointer" onClick={() => navigate('/')}>M</h1>
+        )}
+      </div>
+
+      {/* Menu */}
+      <div className="flex-1 overflow-y-auto py-8 space-y-8 no-scrollbar">
+        {menuGroups.map((group, idx) => (
+          <div key={idx} className="px-4">
+            {sidebarOpen && (
+              <h3 className={`px-4 mb-4 text-[10px] uppercase tracking-[0.2em] font-medium ${theme.subText}`}>
+                {group.label}
+              </h3>
+            )}
+            <div className="space-y-1">
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.path)}
+                  title={!sidebarOpen ? item.label : ''}
+                  className={`
+                    w-full flex items-center gap-4 px-4 py-3 rounded-md transition-all duration-300 group
+                    ${isActive(item.path) ? `bg-[#C9A25D]/10 text-[#C9A25D]` : `${theme.text} ${theme.hoverBg}`}
+                    ${!sidebarOpen ? 'justify-center' : ''}
+                  `}
+                >
+                  <item.icon strokeWidth={1.5} size={20} className={isActive(item.path) ? 'text-[#C9A25D]' : 'text-stone-400 group-hover:text-[#C9A25D]'} />
+                  {sidebarOpen && <span className="text-xs uppercase tracking-widest font-medium">{item.label}</span>}
+                  {sidebarOpen && isActive(item.path) && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#C9A25D]"></div>}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Profile */}
+      <div className={`p-6 border-t ${theme.border}`}>
+        <div className={`flex items-center gap-3 w-full ${!sidebarOpen ? 'justify-center' : ''}`}>
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-stone-200 grayscale hover:grayscale-0 transition-all cursor-pointer">
+             <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Admin" className="w-full h-full object-cover" />
+          </div>
+          {sidebarOpen && (
+            <div className="text-left overflow-hidden">
+              <p className="text-sm font-medium truncate">Chef Marco</p>
+              <p className={`text-[10px] uppercase tracking-wider ${theme.subText}`}>Head Admin</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
