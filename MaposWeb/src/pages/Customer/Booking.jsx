@@ -1,13 +1,13 @@
 // src/pages/Customer/Booking.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   ArrowUp, Calendar, Users, ChevronDown, 
   Check, Utensils, ChevronLeft, ChevronRight, Clock
 } from 'lucide-react';
 import Navbar from '../../components/customer/Navbar';
 import Footer from '../../components/customer/Footer';
-import api from "../../api/api";
-import axios from 'axios';
+import api from "../../api/api"; 
 
 // --- Minimalist Animation Wrapper ---
 const FadeIn = ({ children, delay = 0, direction = 'up' }) => {
@@ -46,13 +46,15 @@ const FadeIn = ({ children, delay = 0, direction = 'up' }) => {
 };
 
 const Booking = () => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
 
-  // --- Form & Dropdown States ---
+  // --- Form & Loading States ---
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', date: '', 
     guests: '', budget: '', startTime: '', endTime: '',
@@ -60,7 +62,7 @@ const Booking = () => {
   });
   
   const [eventType, setEventType] = useState("");
-  const [serviceStyle, setServiceStyle] = useState("");
+  const [serviceStyle, setServiceStyle] = useState(""); // 'plated', 'buffet', 'family'
   
   // Dropdown Toggles
   const [eventTypeOpen, setEventTypeOpen] = useState(false);
@@ -68,19 +70,30 @@ const Booking = () => {
   const [startTimeOpen, setStartTimeOpen] = useState(false);
   const [endTimeOpen, setEndTimeOpen] = useState(false);
 
-  // --- Calendar Logic States ---
+  // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
-  
-  // MOCK DATA
   const bookedDates = ["2025-11-15", "2025-11-20", "2025-12-01", "2025-12-25"];
-  
-  const eventOptions = [
-    'Wedding', 'Corporate Gala', 'Private Dinner', 'Cocktail Reception', 
-    'Product Launch', 'Birthday', 'Engagement Party', 
-    'Charity Ball', 'Art Exhibition', 'Holiday Party', 'Conference', 'Workshop'
-  ];
+  const eventOptions = ['Wedding', 'Corporate Gala', 'Private Dinner', 'Cocktail Reception', 'Product Launch', 'Birthday', 'Engagement Party', 'Charity Ball'];
 
-  // --- Generate Time Slots (24/7) ---
+  // --- AUTOMATIC BUDGET CALCULATION ---
+  // Logic remains, but prices are hidden from UI cards as requested
+  const prices = {
+    'plated': 1500,
+    'buffet': 850,
+    'family': 1100
+  };
+
+  useEffect(() => {
+    const guestCount = parseInt(formData.guests) || 0;
+    const pricePerHead = prices[serviceStyle] || 0;
+    
+    if (guestCount > 0 && pricePerHead > 0) {
+      const total = guestCount * pricePerHead;
+      setFormData(prev => ({ ...prev, budget: total }));
+    }
+  }, [formData.guests, serviceStyle]);
+
+  // Generate Time Slots
   const generateTimeSlots = () => {
     const times = [];
     for (let i = 0; i < 24; i++) {
@@ -97,11 +110,11 @@ const Booking = () => {
    useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark'); // Save preference
+      localStorage.setItem('theme', 'dark');
       document.body.style.backgroundColor = '#0c0c0c';
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light'); // Save preference
+      localStorage.setItem('theme', 'light');
       document.body.style.backgroundColor = '#FAFAFA';
     }
   }, [darkMode]);
@@ -123,25 +136,26 @@ const Booking = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  try {
-    const response = await api.post("/inquiries", {
+    const bookingData = {
       ...formData,
       eventType,
       serviceStyle
-    });
+    };
 
-    alert("Inquiry Submitted Successfully!");
-    console.log("Saved:", response.data);
+    try {
+      await api.post("/inquiries", bookingData);
+      navigate('/confirmation', { state: bookingData });
+    } catch (error) {
+      console.error("Submission Error:", error);
+      alert("Failed to submit inquiry. Please try again.");
+      setIsSubmitting(false);
+    }
+  };
 
-  } catch (error) {
-    console.error(error);
-    alert("Error submitting inquiry!");
-  }
-};
-
-  // --- Calendar Helpers ---
+  // Calendar Helpers
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
   
@@ -150,7 +164,6 @@ const Booking = () => {
     const offset = selected.getTimezoneOffset();
     const selectedDate = new Date(selected.getTime() - (offset*60*1000));
     const dateString = selectedDate.toISOString().split('T')[0];
-
     if (!bookedDates.includes(dateString)) {
       setFormData(prev => ({ ...prev, date: dateString }));
       setCalendarOpen(false);
@@ -169,9 +182,7 @@ const Booking = () => {
     const startDay = getFirstDayOfMonth(year, month);
     const days = [];
     
-    for (let i = 0; i < startDay; i++) {
-      days.push(<div key={`empty-${i}`} className="p-2"></div>);
-    }
+    for (let i = 0; i < startDay; i++) { days.push(<div key={`empty-${i}`} className="p-2"></div>); }
 
     for (let day = 1; day <= daysInMonth; day++) {
       const checkDate = new Date(year, month, day);
@@ -210,7 +221,6 @@ const Booking = () => {
     cardBg: darkMode ? 'bg-[#111]' : 'bg-white',
     text: darkMode ? 'text-stone-200' : 'text-stone-900',
     subText: darkMode ? 'text-stone-400' : 'text-stone-500',
-    // Ensure border is always defined via variables or hex for consistency
     border: darkMode ? 'border-stone-800' : 'border-stone-200',
     inputFocus: darkMode ? 'focus:border-stone-100' : 'focus:border-stone-900',
     dropdownBg: darkMode ? 'bg-[#1c1c1c]' : 'bg-white',
@@ -235,7 +245,6 @@ const Booking = () => {
 
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} isScrolled={isScrolled} />
 
-      {/* --- Hero Section --- */}
       <header className="relative h-[50vh] md:h-[60vh] w-full overflow-hidden bg-stone-900 flex flex-col justify-center items-center">
         <div className="absolute inset-0 w-full h-full z-0">
           <img src="https://images.pexels.com/photos/2291367/pexels-photo-2291367.jpeg?auto=compress&cs=tinysrgb&w=1600" alt="Table Setting" className="w-full h-full object-cover opacity-40" />
@@ -250,7 +259,6 @@ const Booking = () => {
         </div>
       </header>
 
-      {/* --- Booking Form Section --- */}
       <section className={`py-20 md:py-32 ${theme.bg} relative`}>
         <div className="max-w-screen-md mx-auto px-6">
           <FadeIn delay={200}>
@@ -263,149 +271,16 @@ const Booking = () => {
                     <span className="text-[#C9A25D] text-sm font-sans tracking-widest uppercase">01.</span> The Host
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="group">
-                      <input type="text" name="name" placeholder="Full Name" onChange={handleInputChange} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 ${theme.text} placeholder-stone-400 focus:outline-none ${theme.inputFocus} transition-colors`} required />
-                    </div>
-                    <div className="group">
-                      <input type="email" name="email" placeholder="Email Address" onChange={handleInputChange} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 ${theme.text} placeholder-stone-400 focus:outline-none ${theme.inputFocus} transition-colors`} required />
-                    </div>
-                    <div className="group md:col-span-2">
-                      <input type="tel" name="phone" placeholder="Phone Number" onChange={handleInputChange} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 ${theme.text} placeholder-stone-400 focus:outline-none ${theme.inputFocus} transition-colors`} />
-                    </div>
+                    <div className="group"><input type="text" name="name" placeholder="Full Name" onChange={handleInputChange} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 ${theme.text} placeholder-stone-400 focus:outline-none ${theme.inputFocus} transition-colors`} required /></div>
+                    <div className="group"><input type="email" name="email" placeholder="Email Address" onChange={handleInputChange} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 ${theme.text} placeholder-stone-400 focus:outline-none ${theme.inputFocus} transition-colors`} required /></div>
+                    <div className="group md:col-span-2"><input type="tel" name="phone" placeholder="Phone Number" onChange={handleInputChange} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 ${theme.text} placeholder-stone-400 focus:outline-none ${theme.inputFocus} transition-colors`} /></div>
                   </div>
                 </div>
 
-                {/* 2. Event Details */}
-                <div>
-                   <h3 className={`font-serif text-2xl ${theme.text} mb-8 flex items-center gap-3`}>
-                    <span className="text-[#C9A25D] text-sm font-sans tracking-widest uppercase">02.</span> The Event
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    {/* Date Picker (Box UI) */}
-                    <div className="group relative">
-                      <button type="button" onClick={() => setCalendarOpen(!calendarOpen)} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 pr-10 text-left focus:outline-none ${theme.inputFocus} transition-colors flex items-center cursor-pointer`}>
-                        <Calendar className={`w-4 h-4 ${theme.subText} mr-3`} />
-                        <span className={formData.date ? theme.text : "text-stone-400"}>{formData.date || "Select Date"}</span>
-                      </button>
-                      <div className={`absolute top-full left-0 w-full sm:w-[320px] mt-4 p-5 shadow-2xl rounded-sm z-50 transition-all duration-300 origin-top ${calendarOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'} ${theme.dropdownBg} border ${theme.border}`}>
-                        <div className="flex justify-between items-center mb-4">
-                          <button type="button" onClick={() => changeMonth(-1)} className={`p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full ${theme.text}`}><ChevronLeft className="w-5 h-5" /></button>
-                          <span className={`font-serif text-lg ${theme.text}`}>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
-                          <button type="button" onClick={() => changeMonth(1)} className={`p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full ${theme.text}`}><ChevronRight className="w-5 h-5" /></button>
-                        </div>
-                        <div className="grid grid-cols-7 text-center mb-2">{['S','M','T','W','T','F','S'].map((d, i) => (<span key={i} className="text-[10px] font-bold uppercase text-[#C9A25D]">{d}</span>))}</div>
-                        <div className="grid grid-cols-7 gap-1 text-center">{renderCalendarDays()}</div>
-                      </div>
-                    </div>
-
-                    {/* Start Time - FIX: Updated border to use theme.border */}
-                    <div className="group relative">
-                      <button type="button" onClick={() => setStartTimeOpen(!startTimeOpen)} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 pr-10 text-left focus:outline-none ${theme.inputFocus} transition-colors flex items-center cursor-pointer`}>
-                         <Clock className={`w-4 h-4 ${theme.subText} mr-3`} />
-                         <span className={formData.startTime ? theme.text : "text-stone-400"}>{formData.startTime || "Start Time"}</span>
-                      </button>
-                      
-                      <div className={`absolute top-full left-0 w-full sm:w-[320px] mt-4 p-5 shadow-2xl rounded-sm z-50 transition-all duration-300 origin-top ${startTimeOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'} ${theme.dropdownBg} border ${theme.border}`}>
-                         <div className="mb-3 border-b border-stone-100 dark:border-stone-800 pb-2"><span className="text-xs font-serif italic text-[#C9A25D]">Select Start Time</span></div>
-                         <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto no-scrollbar">
-                            {timeSlots.map(time => (
-                               <div 
-                                 key={time} 
-                                 onClick={() => { setFormData(prev => ({...prev, startTime: time})); setStartTimeOpen(false); }} 
-                                 className={`
-                                   px-2 py-2 text-xs text-center cursor-pointer border rounded-sm transition-all duration-200
-                                   ${formData.startTime === time 
-                                     ? 'bg-[#C9A25D] text-white border-[#C9A25D] shadow-sm' 
-                                     : `${theme.border} ${theme.text} hover:border-[#C9A25D] hover:text-[#C9A25D] hover:bg-transparent` 
-                                   }
-                                 `}
-                               >
-                                  {time}
-                               </div>
-                            ))}
-                         </div>
-                      </div>
-                    </div>
-
-                    {/* End Time - FIX: Updated border to use theme.border */}
-                    <div className="group relative">
-                      <button type="button" onClick={() => setEndTimeOpen(!endTimeOpen)} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 pr-10 text-left focus:outline-none ${theme.inputFocus} transition-colors flex items-center cursor-pointer`}>
-                         <Clock className={`w-4 h-4 ${theme.subText} mr-3`} />
-                         <span className={formData.endTime ? theme.text : "text-stone-400"}>{formData.endTime || "End Time"}</span>
-                      </button>
-                      
-                      <div className={`absolute top-full left-0 w-full sm:w-[320px] mt-4 p-5 shadow-2xl rounded-sm z-50 transition-all duration-300 origin-top ${endTimeOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'} ${theme.dropdownBg} border ${theme.border}`}>
-                         <div className="mb-3 border-b border-stone-100 dark:border-stone-800 pb-2"><span className="text-xs font-serif italic text-[#C9A25D]">Select End Time</span></div>
-                         <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto no-scrollbar">
-                            {timeSlots.map(time => (
-                               <div 
-                                 key={time} 
-                                 onClick={() => { setFormData(prev => ({...prev, endTime: time})); setEndTimeOpen(false); }} 
-                                 className={`
-                                   px-2 py-2 text-xs text-center cursor-pointer border rounded-sm transition-all duration-200
-                                   ${formData.endTime === time 
-                                     ? 'bg-[#C9A25D] text-white border-[#C9A25D] shadow-sm' 
-                                     : `${theme.border} ${theme.text} hover:border-[#C9A25D] hover:text-[#C9A25D] hover:bg-transparent` 
-                                   }
-                                 `}
-                               >
-                                  {time}
-                               </div>
-                            ))}
-                         </div>
-                      </div>
-                    </div>
-
-                    {/* Guest Count - FIX: Updated wrapper to use theme.border */}
-                    <div className="group">
-                      <div className={`flex items-center border-b ${theme.border}`}>
-                         <Users className={`w-4 h-4 ${theme.subText} mr-3`} />
-                         <input type="number" name="guests" placeholder="Estimated Guests" onChange={handleInputChange} className={`w-full bg-transparent py-3 ${theme.text} placeholder-stone-400 focus:outline-none`} required />
-                      </div>
-                    </div>
-
-                    {/* Estimated Budget (PHP) - FIX: Updated wrapper to use theme.border */}
-                    <div className="group md:col-span-2">
-                      <div className={`flex items-center border-b ${theme.border}`}>
-                         <span className={`text-lg ${theme.subText} mr-3 font-serif`}>₱</span>
-                         <input type="number" name="budget" placeholder="Estimated Budget (PHP)" onChange={handleInputChange} className={`w-full bg-transparent py-3 ${theme.text} placeholder-stone-400 focus:outline-none`} />
-                      </div>
-                    </div>
-
-                    {/* Event Type Dropdown */}
-                    <div className="group relative md:col-span-2">
-                      <button type="button" onClick={() => setEventTypeOpen(!eventTypeOpen)} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 pr-10 text-left focus:outline-none ${theme.inputFocus} transition-colors flex justify-between items-center cursor-pointer`}>
-                        <span className={eventType ? theme.text : "text-stone-400"}>{eventType || "Event Type"}</span>
-                        <ChevronDown className={`w-4 h-4 ${theme.subText} transition-transform duration-300 ${eventTypeOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      <div className={`absolute top-full left-0 w-full sm:w-[400px] mt-4 p-5 shadow-2xl rounded-sm z-40 transition-all duration-300 origin-top ${eventTypeOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'} ${theme.dropdownBg} border ${theme.border}`}>
-                        <div className="mb-4 border-b border-stone-100 dark:border-stone-800 pb-2"><span className="text-xs font-serif italic text-[#C9A25D]">Select an Occasion</span></div>
-                        <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto no-scrollbar">
-                          {eventOptions.map((option) => (
-                            <div 
-                              key={option} 
-                              onClick={() => { setEventType(option); setEventTypeOpen(false); }} 
-                              className={`
-                                px-3 py-2 text-xs uppercase tracking-wider text-center cursor-pointer transition-all border rounded-sm 
-                                ${eventType === option 
-                                  ? 'bg-[#C9A25D] text-white border-[#C9A25D]' 
-                                  : `${theme.border} ${theme.text} hover:border-[#C9A25D] hover:text-[#C9A25D] hover:bg-transparent`}
-                              `}
-                            >
-                              {option}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Service Preferences */}
+                {/* 2. Service Style (Moved Up & Price Text Removed) */}
                 <div>
                   <h3 className={`font-serif text-2xl ${theme.text} mb-8 flex items-center gap-3`}>
-                    <span className="text-[#C9A25D] text-sm font-sans tracking-widest uppercase">03.</span> Service Style
+                    <span className="text-[#C9A25D] text-sm font-sans tracking-widest uppercase">02.</span> Service Style
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
@@ -430,12 +305,69 @@ const Booking = () => {
                         </div>
                         <h4 className={`font-serif text-lg ${theme.text} mb-1`}>{style.label}</h4>
                         <p className={`text-xs ${theme.subText}`}>{style.desc}</p>
+                        {/* Removed Price Text as requested */}
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* 4. Additional Notes */}
+                {/* 3. Event Details (Moved Down) */}
+                <div>
+                   <h3 className={`font-serif text-2xl ${theme.text} mb-8 flex items-center gap-3`}>
+                    <span className="text-[#C9A25D] text-sm font-sans tracking-widest uppercase">03.</span> The Event
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    {/* Date Picker */}
+                    <div className="group relative">
+                      <button type="button" onClick={() => setCalendarOpen(!calendarOpen)} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 pr-10 text-left focus:outline-none ${theme.inputFocus} transition-colors flex items-center cursor-pointer`}>
+                        <Calendar className={`w-4 h-4 ${theme.subText} mr-3`} />
+                        <span className={formData.date ? theme.text : "text-stone-400"}>{formData.date || "Select Date"}</span>
+                      </button>
+                      <div className={`absolute top-full left-0 w-full sm:w-[320px] mt-4 p-5 shadow-2xl rounded-sm z-50 transition-all duration-300 origin-top ${calendarOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'} ${theme.dropdownBg} border ${theme.border}`}>
+                        <div className="flex justify-between items-center mb-4"><button type="button" onClick={() => changeMonth(-1)} className={`p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full ${theme.text}`}><ChevronLeft className="w-5 h-5" /></button><span className={`font-serif text-lg ${theme.text}`}>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</span><button type="button" onClick={() => changeMonth(1)} className={`p-1 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full ${theme.text}`}><ChevronRight className="w-5 h-5" /></button></div>
+                        <div className="grid grid-cols-7 text-center mb-2">{['S','M','T','W','T','F','S'].map((d, i) => (<span key={i} className="text-[10px] font-bold uppercase text-[#C9A25D]">{d}</span>))}</div>
+                        <div className="grid grid-cols-7 gap-1 text-center">{renderCalendarDays()}</div>
+                      </div>
+                    </div>
+
+                    {/* Start/End Time */}
+                    <div className="group relative"><div className={`flex items-center border-b ${theme.border}`}><Clock className={`w-4 h-4 ${theme.subText} mr-3`} /><input type="text" name="startTime" placeholder="Start Time (e.g. 4PM)" value={formData.startTime} onChange={handleInputChange} className={`w-full bg-transparent py-3 ${theme.text} placeholder-stone-400 focus:outline-none`}/></div></div>
+                    <div className="group relative"><div className={`flex items-center border-b ${theme.border}`}><Clock className={`w-4 h-4 ${theme.subText} mr-3`} /><input type="text" name="endTime" placeholder="End Time (e.g. 10PM)" value={formData.endTime} onChange={handleInputChange} className={`w-full bg-transparent py-3 ${theme.text} placeholder-stone-400 focus:outline-none`}/></div></div>
+
+                    {/* Guest Count */}
+                    <div className="group">
+                      <div className={`flex items-center border-b ${theme.border}`}>
+                         <Users className={`w-4 h-4 ${theme.subText} mr-3`} />
+                         <input type="number" name="guests" placeholder="Estimated Guests" onChange={handleInputChange} className={`w-full bg-transparent py-3 ${theme.text} placeholder-stone-400 focus:outline-none`} required />
+                      </div>
+                    </div>
+
+                    {/* Estimated Budget */}
+                    <div className="group md:col-span-2">
+                      <div className={`flex items-center border-b ${theme.border}`}>
+                         <span className={`text-lg ${theme.subText} mr-3 font-serif`}>₱</span>
+                         <input 
+                           type="text" 
+                           name="budget" 
+                           placeholder="Estimated Budget (Auto-calculated)" 
+                           value={formData.budget ? formData.budget.toLocaleString() : ''}
+                           readOnly
+                           className={`w-full bg-transparent py-3 ${theme.text} placeholder-stone-400 focus:outline-none cursor-not-allowed opacity-70`} 
+                         />
+                      </div>
+                      <p className="text-[10px] text-stone-400 mt-1 italic">Calculated based on pax & service style.</p>
+                    </div>
+
+                    {/* Event Type Dropdown */}
+                    <div className="group relative md:col-span-2">
+                      <button type="button" onClick={() => setEventTypeOpen(!eventTypeOpen)} className={`w-full bg-transparent border-b ${theme.border} py-3 pl-0 pr-10 text-left focus:outline-none ${theme.inputFocus} transition-colors flex justify-between items-center cursor-pointer`}><span className={eventType ? theme.text : "text-stone-400"}>{eventType || "Event Type"}</span><ChevronDown className={`w-4 h-4 ${theme.subText} transition-transform duration-300 ${eventTypeOpen ? 'rotate-180' : ''}`} /></button>
+                      <div className={`absolute top-full left-0 w-full sm:w-[400px] mt-4 p-5 shadow-2xl rounded-sm z-40 transition-all duration-300 origin-top ${eventTypeOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'} ${theme.dropdownBg} border ${theme.border}`}><div className="mb-4 border-b border-stone-100 dark:border-stone-800 pb-2"><span className="text-xs font-serif italic text-[#C9A25D]">Select an Occasion</span></div><div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto no-scrollbar">{eventOptions.map((option) => (<div key={option} onClick={() => { setEventType(option); setEventTypeOpen(false); }} className={`px-3 py-2 text-xs uppercase tracking-wider text-center cursor-pointer transition-all border rounded-sm ${eventType === option ? 'bg-[#C9A25D] text-white border-[#C9A25D]' : `${theme.border} ${theme.text} hover:border-[#C9A25D] hover:text-[#C9A25D] hover:bg-transparent`} `}>{option}</div>))}</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Details */}
                 <div>
                   <h3 className={`font-serif text-2xl ${theme.text} mb-8 flex items-center gap-3`}>
                     <span className="text-[#C9A25D] text-sm font-sans tracking-widest uppercase">04.</span> Details
@@ -445,7 +377,19 @@ const Booking = () => {
 
                 {/* Submit Button */}
                 <div className="pt-6">
-                  <button className={`w-full py-5 ${darkMode ? 'bg-white text-stone-900 hover:bg-[#C9A25D] hover:text-white' : 'bg-stone-900 text-white hover:bg-[#C9A25D]'} text-xs tracking-[0.25em] uppercase font-medium transition-all duration-300 shadow-xl`}>Get a Quotation</button>
+                  <button 
+                    disabled={isSubmitting}
+                    className={`w-full py-5 text-xs tracking-[0.25em] uppercase font-medium transition-all duration-300 shadow-xl
+                      ${isSubmitting 
+                        ? 'bg-stone-400 cursor-not-allowed text-white' 
+                        : darkMode 
+                          ? 'bg-white text-stone-900 hover:bg-[#C9A25D] hover:text-white' 
+                          : 'bg-stone-900 text-white hover:bg-[#C9A25D]'
+                      }
+                    `}
+                  >
+                    {isSubmitting ? "Processing Request..." : "Get a Quotation"}
+                  </button>
                   <p className={`text-center mt-6 text-xs ${theme.subText} italic`}>A member of our team will respond within 24 hours.</p>
                 </div>
 
