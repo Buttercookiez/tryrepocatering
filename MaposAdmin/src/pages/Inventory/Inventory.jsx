@@ -2,27 +2,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, ArrowUpDown, AlertTriangle, 
-  Package, Tag, MoreHorizontal, Download 
+  Package, Tag, MoreHorizontal, Download, X, ChevronDown
 } from 'lucide-react';
 
-// Import Layout Components
+// --- FIXED IMPORTS ---
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
 
-// --- Animation Component ---
+// --- 1. ANIMATION COMPONENT ---
 const FadeIn = ({ children, delay = 0 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
+    const currentRef = ref.current;
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
-      },
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
       { threshold: 0.1 }
     );
-    if (ref.current) observer.observe(ref.current);
-    return () => { if (ref.current) observer.unobserve(ref.current); };
+    if (currentRef) observer.observe(currentRef);
+    return () => { if (currentRef) observer.unobserve(currentRef); };
   }, []);
 
   return (
@@ -38,33 +37,148 @@ const FadeIn = ({ children, delay = 0 }) => {
   );
 };
 
-const Inventory = () => {
-  const [darkMode, setDarkMode] = useState(() => {
-  return localStorage.getItem('theme') === 'dark';
-});
+// --- 2. NEW ITEM MODAL (Matches Theme & Requirements) ---
+const NewItemModal = ({ isOpen, onClose, onSave, theme, categories }) => {
+  const [formData, setFormData] = useState({
+    name: '', category: '', quantity: '', unit: 'Pcs', threshold: ''
+  });
+  
+  // State for Custom Category Dropdown
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
-useEffect(() => {
-  if (darkMode) {
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }
-}, [darkMode]);
-  // Initialize state based on Local Storage
-const [sidebarOpen, setSidebarOpen] = useState(() => {
-  const savedState = localStorage.getItem('sidebarState');
-  return savedState !== null ? savedState === 'true' : true;
-});
+  const inputBase = `w-full bg-transparent border-b ${theme.border} py-3 pl-0 text-sm ${theme.text} placeholder-stone-400 focus:outline-none focus:border-[#C9A25D] transition-colors`;
+  const dropdownContainer = `absolute top-full left-0 w-full mt-1 p-2 shadow-xl rounded-sm z-50 transition-all duration-300 origin-top border ${theme.border} ${theme.cardBg} max-h-48 overflow-y-auto no-scrollbar`;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = () => {
+    if (!formData.name || !formData.quantity) return; 
+
+    const newItem = {
+      id: Date.now(),
+      name: formData.name,
+      // Auto-generated SKU/Code
+      sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`, 
+      category: formData.category || 'Miscellaneous',
+      quantity: Number(formData.quantity),
+      unit: formData.unit,
+      threshold: Number(formData.threshold),
+      lastUpdated: 'Just Now'
+    };
+    onSave(newItem);
+    onClose();
+    setFormData({ name: '', category: '', quantity: '', unit: 'Pcs', threshold: '' });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className={`w-full max-w-xl ${theme.cardBg} rounded-sm shadow-2xl border ${theme.border} flex flex-col`}>
+        
+        {/* Header */}
+        <div className={`p-8 border-b ${theme.border} flex justify-between items-center sticky top-0 ${theme.cardBg} z-20`}>
+          <div>
+            <h2 className={`font-serif text-3xl ${theme.text}`}>Add Inventory Item</h2>
+            <p className={`text-xs ${theme.subText} mt-1`}>Register new equipment or supplies.</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-full transition-colors text-stone-500"><X size={20}/></button>
+        </div>
+        
+        {/* Body */}
+        <div className="p-8 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            {/* Item Name (Full Width) */}
+            <div className="md:col-span-2">
+              <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Item Name" className={inputBase} />
+            </div>
+            
+            {/* Custom Category Dropdown (Aligned UI) */}
+            <div className="relative md:col-span-2">
+               <button 
+                 type="button" 
+                 onClick={() => setCategoryOpen(!categoryOpen)} 
+                 className={`${inputBase} text-left flex items-center justify-between cursor-pointer`}
+               >
+                  <span className={formData.category ? theme.text : "text-stone-400"}>
+                    {formData.category || "Select Category"}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-300 ${categoryOpen ? 'rotate-180' : ''}`} />
+               </button>
+               
+               <div className={`${dropdownContainer} ${categoryOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'}`}>
+                  <div className="flex flex-col gap-1">
+                     {categories.filter(c => c !== 'All').map(cat => (
+                        <div 
+                          key={cat} 
+                          onClick={() => { 
+                            setFormData(prev => ({...prev, category: cat})); 
+                            setCategoryOpen(false); 
+                          }} 
+                          className={`text-xs p-2 hover:bg-[#C9A25D] hover:text-white cursor-pointer transition-colors rounded-sm ${theme.text}`}
+                        >
+                          {cat}
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            </div>
+
+            {/* Quantity (Simple Number Input) */}
+            <input type="number" name="quantity" value={formData.quantity} onChange={handleChange} placeholder="Current Stock" className={inputBase} />
+            
+            {/* Unit & Threshold (Simple Number Inputs) */}
+            <div className="flex gap-4">
+               <input type="text" name="unit" value={formData.unit} onChange={handleChange} placeholder="Unit (e.g. Pcs)" className={`${inputBase} w-1/3`} />
+               <input type="number" name="threshold" value={formData.threshold} onChange={handleChange} placeholder="Low Stock Threshold" className={`${inputBase} w-2/3`} />
+            </div>
+
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className={`p-6 border-t ${theme.border} flex justify-end gap-4`}>
+          <button onClick={onClose} className={`px-6 py-3 text-xs uppercase tracking-widest border ${theme.border} ${theme.text} hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors`}>Cancel</button>
+          <button onClick={handleSubmit} className="px-8 py-3 bg-[#1c1c1c] text-white text-xs uppercase tracking-widest hover:bg-[#C9A25D] transition-colors rounded-sm shadow-lg">Save Item</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- 3. MAIN COMPONENT ---
+const Inventory = () => {
+  // --- Persistence Logic ---
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const savedState = localStorage.getItem('sidebarState');
+    return savedState !== null ? JSON.parse(savedState) : true;
+  });
+
   const [activeTab, setActiveTab] = useState('Inventory');
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
+  
+  // Modal State
+  const [isNewItemOpen, setIsNewItemOpen] = useState(false);
 
-  // --- Theme Logic ---
+  // --- Effects ---
   useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    localStorage.setItem('sidebarState', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
   }, [darkMode]);
 
   const theme = {
@@ -75,19 +189,30 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
     border: darkMode ? 'border-stone-800' : 'border-stone-200',
     accent: 'text-[#C9A25D]',
     accentBg: 'bg-[#C9A25D]',
-    hoverBg: darkMode ? 'hover:bg-stone-800' : 'hover:bg-stone-50',
+    hoverBg: darkMode ? 'hover:bg-stone-900' : 'hover:bg-stone-50',
   };
 
-  // --- Mock Data ---
-  const inventoryData = [
-    { id: 1, name: 'White Truffle Oil', sku: 'ING-001', category: 'Ingredients', quantity: 15, unit: 'Bottles', threshold: 20, lastUpdated: 'Oct 20' },
-    { id: 2, name: 'Gold Rim Charger Plates', sku: 'EQP-104', category: 'Equipment', quantity: 145, unit: 'Pcs', threshold: 150, lastUpdated: 'Oct 18' },
-    { id: 3, name: 'Basmati Rice (Premium)', sku: 'ING-042', category: 'Ingredients', quantity: 45, unit: 'KG', threshold: 25, lastUpdated: 'Oct 21' },
-    { id: 4, name: 'Linen Napkins (Ivory)', sku: 'DEC-201', category: 'Decor', quantity: 300, unit: 'Pcs', threshold: 200, lastUpdated: 'Sep 30' },
-    { id: 5, name: 'Saffron Threads', sku: 'ING-099', category: 'Ingredients', quantity: 5, unit: 'Grams', threshold: 10, lastUpdated: 'Oct 22' },
-    { id: 6, name: 'Chafing Dish Fuel', sku: 'SUP-301', category: 'Supplies', quantity: 80, unit: 'Cans', threshold: 50, lastUpdated: 'Oct 15' },
-    { id: 7, name: 'Wagyu Beef A5', sku: 'ING-500', category: 'Ingredients', quantity: 8, unit: 'KG', threshold: 10, lastUpdated: 'Oct 24' },
+  // --- Categories ---
+  const categories = [
+    "All", "Furniture", "Linens", "Dining", "Equipment", "Decorations", "Structures", "Miscellaneous"
   ];
+
+  // --- Inventory Data (Converted to State for Adding Items) ---
+  const [inventoryData, setInventoryData] = useState([
+    { id: 1, name: 'Tiffany Chairs (Gold)', sku: 'FUR-001', category: 'Furniture', quantity: 145, unit: 'Pcs', threshold: 150, lastUpdated: 'Oct 20' },
+    { id: 2, name: 'White Satin Tablecloth', sku: 'LIN-104', category: 'Linens', quantity: 300, unit: 'Pcs', threshold: 50, lastUpdated: 'Oct 18' },
+    { id: 3, name: 'Silver Cutlery Set', sku: 'DIN-042', category: 'Dining', quantity: 500, unit: 'Sets', threshold: 100, lastUpdated: 'Oct 21' },
+    { id: 4, name: 'Chafing Dishes', sku: 'EQP-201', category: 'Equipment', quantity: 25, unit: 'Units', threshold: 30, lastUpdated: 'Sep 30' },
+    { id: 5, name: 'Crystal Centerpieces', sku: 'DEC-099', category: 'Decorations', quantity: 40, unit: 'Pcs', threshold: 45, lastUpdated: 'Oct 22' },
+    { id: 6, name: 'Garden Tent (20x20)', sku: 'STR-301', category: 'Structures', quantity: 5, unit: 'Units', threshold: 2, lastUpdated: 'Oct 15' },
+    { id: 7, name: 'Extension Cords (Heavy)', sku: 'MSC-500', category: 'Miscellaneous', quantity: 12, unit: 'Pcs', threshold: 15, lastUpdated: 'Oct 24' },
+    { id: 8, name: 'Round Tables (10-Seater)', sku: 'FUR-002', category: 'Furniture', quantity: 50, unit: 'Pcs', threshold: 10, lastUpdated: 'Oct 25' },
+  ]);
+
+  // Function to add new item
+  const handleSaveItem = (newItem) => {
+    setInventoryData(prev => [newItem, ...prev]);
+  };
 
   // Filter Logic
   const filteredItems = inventoryData.filter(item => {
@@ -138,9 +263,9 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
           {/* 1. Stats Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             {[
-              { label: 'Total SKU Count', value: totalItems, sub: 'Across 4 Categories', icon: Package },
+              { label: 'Total Asset Count', value: totalItems, sub: 'Across 7 Categories', icon: Package },
               { label: 'Low Stock Alerts', value: lowStockCount, sub: 'Requires Re-order', icon: AlertTriangle, isAlert: true },
-              { label: 'Inventory Value', value: '$42,500', sub: 'Est. Current Asset', icon: Tag },
+              { label: 'Total Asset Value', value: '$142,500', sub: 'Est. Current Value', icon: Tag },
             ].map((stat, idx) => (
               <FadeIn key={idx} delay={idx * 100}>
                 <div className={`p-6 border ${theme.border} ${theme.cardBg} flex items-start justify-between group hover:border-[#C9A25D]/30 transition-all duration-500`}>
@@ -162,45 +287,56 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
             <div className={`border ${theme.border} ${theme.cardBg} min-h-[600px]`}>
               
               {/* Header Toolbar */}
-              <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-stone-100 dark:border-stone-800">
+              <div className="p-6 md:p-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-stone-100 dark:border-stone-800">
                 <div>
-                  <h3 className="font-serif text-2xl italic">Stock Overview</h3>
-                  <p className={`text-xs ${theme.subText} mt-1`}>Real-time tracking of assets and ingredients.</p>
+                  <h3 className="font-serif text-2xl italic">Asset Overview</h3>
+                  <p className={`text-xs ${theme.subText} mt-1`}>Real-time tracking of equipment and supplies.</p>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  {/* Category Filter Pills */}
-                  <div className="hidden md:flex bg-stone-50 dark:bg-stone-900 p-1 rounded-sm border border-stone-200 dark:border-stone-800">
-                    {['All', 'Ingredients', 'Equipment', 'Decor'].map(cat => (
+                {/* Filter & Actions Group */}
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full lg:w-auto">
+                  
+                  {/* Kitchen-style Filter Pills */}
+                  <div className={`flex flex-wrap gap-1 p-1 rounded-sm border ${theme.border} ${darkMode ? 'bg-stone-900' : 'bg-stone-50'}`}>
+                    {categories.map(cat => (
                       <button
                         key={cat}
                         onClick={() => setCategoryFilter(cat)}
-                        className={`px-4 py-1.5 text-[10px] uppercase tracking-wider transition-all rounded-sm ${
-                          categoryFilter === cat 
-                          ? 'bg-white dark:bg-stone-800 shadow-sm text-[#C9A25D]' 
-                          : 'text-stone-400 hover:text-stone-600'
-                        }`}
+                        className={`
+                          px-3 py-1.5 text-[10px] uppercase tracking-wider transition-all rounded-sm
+                          ${categoryFilter === cat 
+                            ? 'bg-[#C9A25D] text-white shadow-sm' 
+                            : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-300'
+                          }
+                        `}
                       >
                         {cat}
                       </button>
                     ))}
                   </div>
 
-                  <button className="flex items-center gap-2 bg-[#1c1c1c] text-white px-4 py-2.5 text-[10px] uppercase tracking-widest hover:bg-[#C9A25D] transition-colors">
-                    <Plus size={14} /> Add Item
-                  </button>
-                  
-                  <button className={`p-2.5 border ${theme.border} hover:text-[#C9A25D] transition-colors`}>
-                    <Download size={16} strokeWidth={1} />
-                  </button>
+                  <div className="flex gap-3">
+                    {/* ADD ITEM BUTTON */}
+                    <button 
+                      onClick={() => setIsNewItemOpen(true)}
+                      className="flex items-center gap-2 bg-[#1c1c1c] text-white px-4 py-2.5 text-[10px] uppercase tracking-widest hover:bg-[#C9A25D] transition-colors"
+                    >
+                        <Plus size={14} /> Add Item
+                    </button>
+                    
+                    <button className={`p-2.5 border ${theme.border} hover:text-[#C9A25D] transition-colors`}>
+                        <Download size={16} strokeWidth={1} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* --- UPDATED TABLE HEADER (MATCHES FINANCE PAGE STYLE) --- */}
+              {/* TABLE HEADER */}
               <div className={`
-                grid grid-cols-12 gap-4 px-8 py-4 
-                border-b ${theme.border} 
-                text-[10px] uppercase tracking-[0.2em] font-medium text-stone-400 select-none
+                grid grid-cols-12 gap-4 px-8 py-5 
+                border-y ${theme.border} 
+                ${darkMode ? 'bg-[#1c1c1c] text-stone-400' : 'bg-stone-100 text-stone-600'} 
+                text-[11px] uppercase tracking-[0.2em] font-semibold
               `}>
                 <div className="col-span-4 md:col-span-3 flex items-center gap-2 cursor-pointer hover:text-[#C9A25D] transition-colors">
                   Item Name <ArrowUpDown size={10} className="opacity-70"/>
@@ -212,7 +348,7 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
               </div>
 
               {/* Table Rows */}
-              <div className={`divide-y ${darkMode ? 'divide-stone-800' : 'divide-stone-100'}`}>
+              <div className={`divide-y divide-stone-100 dark:divide-stone-800`}>
                 {filteredItems.map((item) => {
                   const percentage = Math.min((item.quantity / (item.threshold * 2)) * 100, 100);
                   const isLow = item.quantity <= item.threshold;
@@ -220,7 +356,7 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
                   return (
                     <div 
                       key={item.id} 
-                      className={`grid grid-cols-12 gap-4 px-8 py-5 items-center group ${theme.hoverBg} transition-colors duration-300`}
+                      className={`grid grid-cols-12 gap-4 px-8 py-5 items-center group ${theme.hoverBg} transition-colors`}
                     >
                       {/* Name */}
                       <div className="col-span-4 md:col-span-3">
@@ -278,7 +414,7 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
                 {filteredItems.length === 0 && (
                    <div className="py-20 text-center">
                       <Package size={40} strokeWidth={1} className="mx-auto text-stone-300 mb-4" />
-                      <p className="font-serif italic text-stone-400">No inventory items found.</p>
+                      <p className="font-serif italic text-stone-400">No items found in {categoryFilter}.</p>
                    </div>
                 )}
               </div>
@@ -297,6 +433,15 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
 
         </div>
       </main>
+
+      {/* --- 4. RENDER MODAL --- */}
+      <NewItemModal 
+         isOpen={isNewItemOpen} 
+         onClose={() => setIsNewItemOpen(false)} 
+         onSave={handleSaveItem}
+         theme={theme}
+         categories={categories}
+      />
     </div>
   );
 };
