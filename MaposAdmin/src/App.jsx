@@ -10,6 +10,7 @@ import Finance from './pages/Finance/Financials';
 import BookingsAndProposals from './pages/bookingdetails/Bookingdetails'; 
 import Inventory from './pages/Inventory/Inventory';
 import Kitchen from './pages/Kitchen/Kitchenprep';
+import ClientRecords from './pages/ClientRecords/ClientRecords'; 
 
 // Styles
 import './App.css';
@@ -39,6 +40,7 @@ function App() {
         <Route path="/inventory/inventory" element={<Inventory />} />
         <Route path="/finance" element={<Finance />} />
         <Route path="/kitchen" element={<Kitchen />} />
+        <Route path="/clients/records" element={<ClientRecords />} />
         
         {/* FIXED LINE BELOW: Use the imported name "BookingsAndProposals" */}
         <Route path="/bookings" element={<BookingsAndProposals />} /> 
