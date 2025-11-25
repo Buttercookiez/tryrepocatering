@@ -25,7 +25,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, theme }) => {
         { id: 'Overview', icon: LayoutGrid, label: 'Dashboard', path: '/dashboard' },
         { id: 'Bookings', icon: BookOpen, label: 'Booking Details', path: '/bookings' }, // <--- ADDED HERE
         { id: 'Calendar', icon: Calendar, label: 'Events Calendar', path: '/events/calendar' },
-        { id: 'Clients', icon: Users, label: 'Client Records', path: '/clients' },
+        { id: 'Clients', icon: Users, label: 'Client Records', path: '/clients/records' },
         { id: 'Tasks', icon: CheckSquare, label: 'Task Manager', path: '/tasks' },
       ]
     },
