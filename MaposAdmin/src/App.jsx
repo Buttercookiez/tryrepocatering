@@ -41,6 +41,7 @@ function App() {
         <Route path="/kitchen" element={<Kitchen />} />
         <Route path="/clients/records" element={<ClientRecords />} />
         
+        
         {/* FIXED LINE BELOW: Use the imported name "BookingsAndProposals" */}
         <Route path="/bookings" element={<BookingsAndProposals />} /> 
         

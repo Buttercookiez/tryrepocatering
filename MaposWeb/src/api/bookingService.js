@@ -1,29 +1,56 @@
-// src/api/bookingService.js
-import axios from 'axios';
+import api from './api'; // Your axios instance
 
-// 1. Setup your base URL (Change port if your backend runs on 5000 or 8080)
-const API_URL = 'http://localhost:5000/api'; 
-// OR if you use a custom axios instance file:
-// import api from './api'; 
-
+// 1. Fetch Booking
 export const getBookingByRefId = async (refId) => {
   try {
-    // This matches your backend route GET /:refId
-    const response = await axios.get(`${API_URL}/inquiries/${refId}`);
+    const response = await api.get(`/inquiries/${refId}`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching booking ${refId}:`, error);
     throw error;
+  } 
+};
+
+// 2. Send Initial Proposal
+export const sendProposalEmail = async (payload) => {
+  try {
+    const response = await api.post(`/inquiries/send-proposal`, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error sending proposal email:", error);
+    throw error;
   }
 };
 
-export const sendProposalEmail = async (payload) => {
+// 3. Send Final Quotation (Contract)
+export const sendFinalQuotation = async (payload) => {
   try {
-    // This matches your backend route POST /send-proposal
-    const response = await axios.post(`${API_URL}/inquiries/send-proposal`, payload);
+    const response = await api.post(`/inquiries/send-quotation`, payload);
     return response.data;
   } catch (error) {
-    console.error("Error sending proposal:", error);
+    console.error("Error sending quotation:", error);
+    throw error;
+  }
+};
+
+// 4. Decline Inquiry
+export const declineInquiry = async (payload) => {
+  try {
+    const response = await api.post(`/inquiries/decline`, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error declining inquiry:", error);
+    throw error;
+  }
+};
+
+// 5. ✅ Client Accepts Proposal (This was missing!)
+export const acceptProposal = async (payload) => {
+  try {
+    const response = await api.post(`/inquiries/accept-proposal`, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error accepting proposal:", error);
     throw error;
   }
 };

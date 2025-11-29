@@ -9,10 +9,11 @@ import Venue from './pages/Customer/Venue';
 import Booking from './pages/Customer/Booking';
 import Confirmation from './pages/Customer/Confirmation';
 import ClientProposal from './pages/Customer/ClientProposal'; // <--- Import the new page
+import ClientPaymentPage from './pages/Customer/ClientPaymentPage'; // Adjust path as needed
 
 
 
-// Styles
+// Styless
 import './App.css';
 
 // --- Simple Placeholder Component ---
@@ -38,6 +39,8 @@ function App() {
         <Route path="/booking" element={<Booking />} />
         <Route path="/confirmation" element={<Confirmation />} />
         <Route path="/client-proposal/:refId" element={<ClientProposal />} /> {/* New Route */}
+        <Route path="/client-payment/:refId" element={<ClientPaymentPage />} />
+        
         
         
         
