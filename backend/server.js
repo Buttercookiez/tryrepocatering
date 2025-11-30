@@ -37,6 +37,17 @@ app.get("/", (req, res) => {
   res.send("Server is Running! 🚀");
 });
 
+// Only listen on port if running locally (Development)
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running locally on port ${PORT}`);
+  });
+}
+
+// REQUIRED FOR VERCEL DEPLOYMENT
+module.exports = app;
+
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
