@@ -1,6 +1,7 @@
 import React from "react";
 import { Filter, Plus, ChevronRight } from "lucide-react";
 import { FadeIn, renderStatusBadge } from "./Utils/UIHelpers";
+import { BookingListSkeleton } from "../../components/SkeletonLoaders";
 
 const BookingList = ({
   bookings,
@@ -8,7 +9,25 @@ const BookingList = ({
   onOpenNewBooking,
   theme,
   darkMode,
+  isLoading, // <--- ADD THIS PROP
 }) => {
+    // --- ADD THIS CHECK ---
+  if (isLoading) {
+    return (
+       <div className="flex-1 overflow-y-auto p-6 md:p-12 scroll-smooth no-scrollbar">
+          {/* Keep the header visible or hide it, up to you. 
+              Here I render the skeleton inside the container layout */}
+          <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+             {/* Optional: You can keep the static header here if you want it visible while loading */}
+             <div>
+               <h2 className={`font-serif text-3xl italic ${theme.text}`}>Bookings</h2>
+             </div>
+          </div>
+          <BookingListSkeleton theme={theme} darkMode={darkMode} />
+       </div>
+    );
+  }
+  // --- END CHECK ---
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-12 scroll-smooth no-scrollbar">
       {/* Header Section */}

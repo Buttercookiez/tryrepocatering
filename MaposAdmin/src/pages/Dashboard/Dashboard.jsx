@@ -6,6 +6,7 @@ import {
 // Import separated components
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
+import { DashboardSkeleton } from '../../components/SkeletonLoaders';
 
 // --- Shared Animation Component ---
 const FadeIn = ({ children, delay = 0 }) => {
@@ -38,31 +39,36 @@ const FadeIn = ({ children, delay = 0 }) => {
 
 const Dashboard = () => {
   const [darkMode, setDarkMode] = useState(() => {
-  return localStorage.getItem('theme') === 'dark';
-});
+    return localStorage.getItem('theme') === 'dark';
+  });
 
-useEffect(() => {
-  if (darkMode) {
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('theme', 'dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', 'light');
-  }
-}, [darkMode]);
+  // --- 1. ADDED LOADING STATE HERE ---
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+  // ---------------------------------
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
+
   // Initialize state based on Local Storage
-const [sidebarOpen, setSidebarOpen] = useState(() => {
-  const savedState = localStorage.getItem('sidebarState');
-  return savedState !== null ? savedState === 'true' : true;
-});
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const savedState = localStorage.getItem('sidebarState');
+    return savedState !== null ? savedState === 'true' : true;
+  });
+  
   const [activeTab, setActiveTab] = useState('Overview');
   const [searchQuery, setSearchQuery] = useState("");
-
-  // --- Theme Logic ---
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  }, [darkMode]);
 
   // Theme Object passed to children
   const theme = {
@@ -131,160 +137,164 @@ const [sidebarOpen, setSidebarOpen] = useState(() => {
           setSearchQuery={setSearchQuery}
         />
 
-        {/* Scrollable Dashboard Content */}
-        <div className="flex-1 overflow-y-auto p-8 md:p-12 scroll-smooth no-scrollbar">
-          
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {[
-              { label: 'Total Revenue', value: '$124,500', trend: '+12%', icon: DollarSign },
-              { label: 'Active Events', value: '08', trend: '2 This Week', icon: Calendar },
-              { label: 'Pending Inquiries', value: '14', trend: 'Needs Action', icon: CheckSquare },
-              { label: 'Inventory Alert', value: '03', trend: 'Low Stock', icon: AlertCircle },
-            ].map((stat, idx) => (
-              <FadeIn key={idx} delay={idx * 100}>
-                <div className={`p-8 border ${theme.border} ${theme.cardBg} group hover:border-[#C9A25D]/30 transition-colors duration-500 h-full flex flex-col justify-between`}>
-                   <div className="flex justify-between items-start mb-4">
-                      <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText}`}>{stat.label}</span>
-                      <stat.icon size={18} strokeWidth={1} className="text-[#C9A25D]" />
-                   </div>
-                   <div>
-                      <h3 className="font-serif text-4xl md:text-5xl font-light mb-2">{stat.value}</h3>
-                      <span className="text-xs font-medium text-stone-400 flex items-center gap-1">
-                         {idx === 3 ? <span className="text-red-400">{stat.trend}</span> : stat.trend}
-                         {idx === 0 && <ArrowUpRight size={12} />}
-                      </span>
-                   </div>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-
-          {/* Split View */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        {/* --- 2. ADDED LOADING LOGIC WRAPPER --- */}
+        {isLoading ? (
+            <DashboardSkeleton theme={theme} darkMode={darkMode} />
+        ) : (
+            <div className="flex-1 overflow-y-auto p-8 md:p-12 scroll-smooth no-scrollbar">
             
-            {/* Upcoming Schedule */}
-            <div className="lg:col-span-2">
-              <FadeIn delay={400}>
-                <div className={`border ${theme.border} ${theme.cardBg} p-8 h-full min-h-[400px]`}>
-                  <div className="flex justify-between items-end mb-8">
-                    <h3 className="font-serif text-2xl italic">Upcoming Schedule</h3>
-                    <button className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText} hover:text-[#C9A25D] border-b border-transparent hover:border-[#C9A25D] pb-1 transition-all`}>View Calendar</button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {filteredEvents.length > 0 ? (
-                      filteredEvents.map((event) => (
-                        <div 
-                          key={event.id} 
-                          className={`flex items-center justify-between p-4 border-b ${theme.border} last:border-0 group ${theme.rowHover} transition-colors rounded-sm`}
-                        >
-                          <div className="flex items-center gap-6">
-                            <div className="flex flex-col items-center justify-center w-12">
-                               <span className="text-xs font-bold uppercase tracking-widest text-[#C9A25D]">{event.month}</span>
-                               <span className="font-serif text-2xl leading-none">{event.date}</span>
-                            </div>
-                            <div>
-                              <h4 className={`font-serif text-lg ${theme.text} group-hover:text-[#C9A25D] transition-colors`}>{event.client}</h4>
-                              <div className={`flex gap-4 text-xs ${darkMode ? 'text-stone-400' : 'text-stone-500'} mt-1 uppercase tracking-wide`}>
-                                <span>{event.type}</span>
-                                <span>•</span>
-                                <span>{event.guests} Guests</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className={`px-3 py-1 text-[10px] uppercase tracking-[0.2em] border ${theme.border} rounded-full ${event.status === 'Confirmed' ? 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300' : 'text-[#C9A25D] border-[#C9A25D]/30'}`}>
-                             {event.status}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="py-10 text-center text-stone-400 text-sm italic">
-                        No events found matching "{searchQuery}"
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </FadeIn>
-            </div>
-
-            {/* Inventory Watch */}
-            <div className="lg:col-span-1">
-              <FadeIn delay={500}>
-                <div className={`border ${theme.border} ${theme.cardBg} p-8 h-full`}>
-                  <div className="flex justify-between items-end mb-8">
-                    <h3 className="font-serif text-2xl italic">Inventory Watch</h3>
-                    <AlertCircle size={18} strokeWidth={1} className="text-red-400" />
-                  </div>
-
-                  <div className="space-y-8">
-                    {[
-                      { item: 'White Truffle Oil', level: 15, color: 'bg-red-400' },
-                      { item: 'Gold Leaf Sheets', level: 30, color: 'bg-[#C9A25D]' },
-                      { item: 'Basmati Rice (25kg)', level: 45, color: 'bg-stone-400' },
-                    ].map((stock, i) => (
-                      <div key={i}>
-                        <div className="flex justify-between text-xs uppercase tracking-widest mb-2">
-                          <span>{stock.item}</span>
-                          <span className={stock.level < 20 ? 'text-red-400' : theme.subText}>{stock.level}%</span>
-                        </div>
-                        <div className={`w-full h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-stone-800' : 'bg-stone-100'}`}>
-                          <div 
-                            className={`h-full rounded-full ${stock.color}`} 
-                            style={{ width: `${stock.level}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button className={`mt-12 w-full py-4 border ${theme.border} text-[10px] uppercase tracking-[0.25em] hover:bg-[#C9A25D] hover:text-white hover:border-[#C9A25D] transition-colors duration-300`}>
-                    Generate Order List
-                  </button>
-                </div>
-              </FadeIn>
-            </div>
-          </div>
-
-          {/* Financial Visualization */}
-          <FadeIn delay={600}>
-            <div className={`border ${theme.border} ${theme.cardBg} p-8 md:p-12`}>
-               <div className="flex flex-col md:flex-row justify-between md:items-end mb-10 gap-4">
-                  <div>
-                    <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText} block mb-2`}>Performance</span>
-                    <h3 className="font-serif text-3xl italic">Profit & Expenses</h3>
-                  </div>
-                  <div className="flex gap-6">
-                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-[#C9A25D]"></span>
-                        <span className={`text-[10px] uppercase tracking-widest ${theme.subText}`}>Revenue</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-stone-300"></span>
-                        <span className={`text-[10px] uppercase tracking-widest ${theme.subText}`}>Cost</span>
-                     </div>
-                  </div>
-               </div>
-
-               <div className="flex items-end justify-between h-64 w-full gap-2 md:gap-4">
-                  {[65, 40, 80, 55, 90, 70, 85].map((val, i) => (
-                    <div key={i} className="flex-1 flex flex-col justify-end h-full group relative cursor-pointer">
-                       <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-stone-900 text-white px-2 py-1 rounded">
-                          ${val}k
-                       </div>
-                       <div style={{ height: `${val}%` }} className="w-full bg-[#C9A25D] opacity-80 group-hover:opacity-100 transition-all duration-500 relative">
-                          <div style={{ height: '40%' }} className="absolute bottom-0 left-0 w-full bg-stone-300 dark:bg-stone-700/50"></div>
-                       </div>
-                       <span className={`text-[10px] text-center mt-4 uppercase tracking-widest ${theme.subText}`}>
-                          {['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}
-                       </span>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                {[
+                { label: 'Total Revenue', value: '$124,500', trend: '+12%', icon: DollarSign },
+                { label: 'Active Events', value: '08', trend: '2 This Week', icon: Calendar },
+                { label: 'Pending Inquiries', value: '14', trend: 'Needs Action', icon: CheckSquare },
+                { label: 'Inventory Alert', value: '03', trend: 'Low Stock', icon: AlertCircle },
+                ].map((stat, idx) => (
+                <FadeIn key={idx} delay={idx * 100}>
+                    <div className={`p-8 border ${theme.border} ${theme.cardBg} group hover:border-[#C9A25D]/30 transition-colors duration-500 h-full flex flex-col justify-between`}>
+                    <div className="flex justify-between items-start mb-4">
+                        <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText}`}>{stat.label}</span>
+                        <stat.icon size={18} strokeWidth={1} className="text-[#C9A25D]" />
                     </div>
-                  ))}
-               </div>
+                    <div>
+                        <h3 className="font-serif text-4xl md:text-5xl font-light mb-2">{stat.value}</h3>
+                        <span className="text-xs font-medium text-stone-400 flex items-center gap-1">
+                            {idx === 3 ? <span className="text-red-400">{stat.trend}</span> : stat.trend}
+                            {idx === 0 && <ArrowUpRight size={12} />}
+                        </span>
+                    </div>
+                    </div>
+                </FadeIn>
+                ))}
             </div>
-          </FadeIn>
 
-        </div>
+            {/* Split View */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+                
+                {/* Upcoming Schedule */}
+                <div className="lg:col-span-2">
+                <FadeIn delay={400}>
+                    <div className={`border ${theme.border} ${theme.cardBg} p-8 h-full min-h-[400px]`}>
+                    <div className="flex justify-between items-end mb-8">
+                        <h3 className="font-serif text-2xl italic">Upcoming Schedule</h3>
+                        <button className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText} hover:text-[#C9A25D] border-b border-transparent hover:border-[#C9A25D] pb-1 transition-all`}>View Calendar</button>
+                    </div>
+
+                    <div className="space-y-2">
+                        {filteredEvents.length > 0 ? (
+                        filteredEvents.map((event) => (
+                            <div 
+                            key={event.id} 
+                            className={`flex items-center justify-between p-4 border-b ${theme.border} last:border-0 group ${theme.rowHover} transition-colors rounded-sm`}
+                            >
+                            <div className="flex items-center gap-6">
+                                <div className="flex flex-col items-center justify-center w-12">
+                                <span className="text-xs font-bold uppercase tracking-widest text-[#C9A25D]">{event.month}</span>
+                                <span className="font-serif text-2xl leading-none">{event.date}</span>
+                                </div>
+                                <div>
+                                <h4 className={`font-serif text-lg ${theme.text} group-hover:text-[#C9A25D] transition-colors`}>{event.client}</h4>
+                                <div className={`flex gap-4 text-xs ${darkMode ? 'text-stone-400' : 'text-stone-500'} mt-1 uppercase tracking-wide`}>
+                                    <span>{event.type}</span>
+                                    <span>•</span>
+                                    <span>{event.guests} Guests</span>
+                                </div>
+                                </div>
+                            </div>
+                            <div className={`px-3 py-1 text-[10px] uppercase tracking-[0.2em] border ${theme.border} rounded-full ${event.status === 'Confirmed' ? 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300' : 'text-[#C9A25D] border-[#C9A25D]/30'}`}>
+                                {event.status}
+                            </div>
+                            </div>
+                        ))
+                        ) : (
+                        <div className="py-10 text-center text-stone-400 text-sm italic">
+                            No events found matching "{searchQuery}"
+                        </div>
+                        )}
+                    </div>
+                    </div>
+                </FadeIn>
+                </div>
+
+                {/* Inventory Watch */}
+                <div className="lg:col-span-1">
+                <FadeIn delay={500}>
+                    <div className={`border ${theme.border} ${theme.cardBg} p-8 h-full`}>
+                    <div className="flex justify-between items-end mb-8">
+                        <h3 className="font-serif text-2xl italic">Inventory Watch</h3>
+                        <AlertCircle size={18} strokeWidth={1} className="text-red-400" />
+                    </div>
+
+                    <div className="space-y-8">
+                        {[
+                        { item: 'White Truffle Oil', level: 15, color: 'bg-red-400' },
+                        { item: 'Gold Leaf Sheets', level: 30, color: 'bg-[#C9A25D]' },
+                        { item: 'Basmati Rice (25kg)', level: 45, color: 'bg-stone-400' },
+                        ].map((stock, i) => (
+                        <div key={i}>
+                            <div className="flex justify-between text-xs uppercase tracking-widest mb-2">
+                            <span>{stock.item}</span>
+                            <span className={stock.level < 20 ? 'text-red-400' : theme.subText}>{stock.level}%</span>
+                            </div>
+                            <div className={`w-full h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-stone-800' : 'bg-stone-100'}`}>
+                            <div 
+                                className={`h-full rounded-full ${stock.color}`} 
+                                style={{ width: `${stock.level}%` }}
+                            ></div>
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+
+                    <button className={`mt-12 w-full py-4 border ${theme.border} text-[10px] uppercase tracking-[0.25em] hover:bg-[#C9A25D] hover:text-white hover:border-[#C9A25D] transition-colors duration-300`}>
+                        Generate Order List
+                    </button>
+                    </div>
+                </FadeIn>
+                </div>
+            </div>
+
+            {/* Financial Visualization */}
+            <FadeIn delay={600}>
+                <div className={`border ${theme.border} ${theme.cardBg} p-8 md:p-12`}>
+                <div className="flex flex-col md:flex-row justify-between md:items-end mb-10 gap-4">
+                    <div>
+                        <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText} block mb-2`}>Performance</span>
+                        <h3 className="font-serif text-3xl italic">Profit & Expenses</h3>
+                    </div>
+                    <div className="flex gap-6">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-[#C9A25D]"></span>
+                            <span className={`text-[10px] uppercase tracking-widest ${theme.subText}`}>Revenue</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-stone-300"></span>
+                            <span className={`text-[10px] uppercase tracking-widest ${theme.subText}`}>Cost</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-end justify-between h-64 w-full gap-2 md:gap-4">
+                    {[65, 40, 80, 55, 90, 70, 85].map((val, i) => (
+                        <div key={i} className="flex-1 flex flex-col justify-end h-full group relative cursor-pointer">
+                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-stone-900 text-white px-2 py-1 rounded">
+                            ${val}k
+                        </div>
+                        <div style={{ height: `${val}%` }} className="w-full bg-[#C9A25D] opacity-80 group-hover:opacity-100 transition-all duration-500 relative">
+                            <div style={{ height: '40%' }} className="absolute bottom-0 left-0 w-full bg-stone-300 dark:bg-stone-700/50"></div>
+                        </div>
+                        <span className={`text-[10px] text-center mt-4 uppercase tracking-widest ${theme.subText}`}>
+                            {['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}
+                        </span>
+                        </div>
+                    ))}
+                </div>
+                </div>
+            </FadeIn>
+
+            </div>
+        )}
       </main>
     </div>
   );

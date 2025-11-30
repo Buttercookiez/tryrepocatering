@@ -10,6 +10,8 @@ import {
   ChefHat, Loader2, XCircle, AlertTriangle
 } from "lucide-react";
 
+import { BookingDetailsSkeleton } from "../../components/SkeletonLoaders"; 
+
 // Imports from your file structure
 import { FadeIn, renderStatusBadge, REJECTION_REASONS } from "./components/BookingHelpers";
 import EventInfoTab from "./tabs/EventInfoTab";
@@ -71,20 +73,46 @@ const BookingDetails = ({
     fetchBookingDetails();
   }, [booking]);
 
-  // 2. Proposal Calculation
-  useEffect(() => {
-    if (bookingData) {
-        const existingTotal = bookingData.proposal?.costBreakdown?.grandTotal;
-        const estimated = bookingData.estimatedBudget;
-        let currentTotal = existingTotal || estimated || 0;
-        setProposalTotal(currentTotal);
-        setPricePerHead(currentTotal / (bookingData.estimatedGuests || 1));
-        
-        const grandTotal = currentTotal * 1.1; 
-        if (bookingData.payment?.downpayment) setDownpaymentAmount(bookingData.payment.downpayment);
-        else setDownpaymentAmount(grandTotal * 0.5);
-    }
-  }, [bookingData]);
+// BookingDetails.jsx
+
+// 2. Proposal Calculation
+useEffect(() => {
+  if (bookingData) {
+      const proposalData = bookingData.proposal || {};
+      
+      // --- NEW LOGIC START ---
+      let currentTotal = 0;
+
+      if (proposalData.isApproved && proposalData.finalAgreedAmount) {
+          // 1. If Client Accepted, use the FROZEN amount
+          currentTotal = proposalData.finalAgreedAmount;
+          // Reverse calculate price per head for display purposes
+          // Note: grandTotal usually includes service charge, so we strip it for the "Price Per Head" input
+          const baseTotal = currentTotal / 1.1; // Removing 10% service charge estimate
+          setPricePerHead(baseTotal / (bookingData.estimatedGuests || 1));
+      } else {
+          // 2. If Draft, use the Draft calculations
+          const existingTotal = proposalData.costBreakdown?.grandTotal;
+          const estimated = bookingData.estimatedBudget;
+          currentTotal = existingTotal || estimated || 0;
+          setPricePerHead(currentTotal / (bookingData.estimatedGuests || 1));
+      }
+      // --- NEW LOGIC END ---
+
+      setProposalTotal(currentTotal);
+      
+      // Calculate Downpayment
+      if (bookingData.payment?.downpayment) {
+          setDownpaymentAmount(bookingData.payment.downpayment);
+      } else {
+          // Default 50%
+          // If already approved, currentTotal includes SC. If draft, we usually add SC later.
+          // To be safe, let's assume currentTotal is the basis.
+          const grandTotal = proposalData.isApproved ? currentTotal : (currentTotal * 1.1);
+          setDownpaymentAmount(grandTotal * 0.5);
+      }
+  }
+}, [bookingData]);
 
   const handlePriceChange = (e) => {
       const val = parseFloat(e.target.value) || 0;
@@ -227,6 +255,15 @@ const BookingDetails = ({
 
   if (!booking && !bookingData) return <div className={`flex-1 h-full flex items-center justify-center ${theme.bg}`}><Loader2 className="animate-spin text-[#C9A25D]" size={30} /></div>;
 
+ // NEW CODE:
+  if (isLoading || (!booking && !bookingData)) {
+    return (
+      <div className={`flex-1 h-full ${theme.bg}`}>
+         <BookingDetailsSkeleton theme={theme} darkMode={darkMode} />
+      </div>
+    );
+  }
+
   const currentData = bookingData || {};
   const paymentData = currentData.payment || {};
   const notesData = currentData.notes || {};
@@ -248,9 +285,11 @@ const BookingDetails = ({
     status: currentData.status || "Pending",
     budget: currentData.estimatedBudget || 0,
     reservationFee: paymentData.reservationFee || 5000,
-    downpayment: paymentData.downpayment || 0,
-    balance: paymentData.balance || currentData.estimatedBudget || 0,
-    downpaymentStatus: paymentData.downpayment ? "Paid" : "Unpaid",
+    // REPLACE WITH THIS:
+downpayment: paymentData.downpayment || 0,
+balance: paymentData.balance || currentData.estimatedBudget || 0,
+// Check paymentStatus strictly. If it's "Payment Pending" or "Unpaid", show that.
+downpaymentStatus: paymentData.paymentStatus === "Paid" ? "Paid" : (paymentData.paymentStatus || "Unpaid"),
     timeline: notesData.timeline || [{ date: "N/A", user: "System", action: "No activity." }],
   };
 

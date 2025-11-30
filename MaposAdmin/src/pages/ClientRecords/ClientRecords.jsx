@@ -7,27 +7,24 @@ import {
   Briefcase, ArrowUpRight, ArrowUpDown, Package, Download 
 } from 'lucide-react';
 
-// --- FIXED IMPORTS (Matching your folder structure) ---
+// --- IMPORTS ---
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
+import { ClientSkeleton } from '../../components/SkeletonLoaders';
 
-// --- 1. ANIMATION COMPONENT (Fixed Ref Warning) ---
+// --- 1. ANIMATION COMPONENT ---
 const FadeIn = ({ children, delay = 0 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
-    // 1. Copy ref to a variable to avoid cleanup warning
     const currentRef = ref.current; 
-    
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
       { threshold: 0.1 }
     );
 
     if (currentRef) observer.observe(currentRef);
-
-    // 2. Use the variable in the cleanup function
     return () => { if (currentRef) observer.unobserve(currentRef); };
   }, []);
 
@@ -401,6 +398,16 @@ const ClientRecords = () => {
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // --- ADDED LOADING STATE ---
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate API Fetch
+    const timer = setTimeout(() => setIsLoading(false), 900);
+    return () => clearTimeout(timer);
+  }, []);
+  // -------------------------
+
   // Mock Data
   const [clients, setClients] = useState([
     { id: 'CL-1001', name: 'Sofia Alcantara', email: 'sofia@mail.com', phone: '+63 917 123 4567', company: '', totalSpend: 250000, lastActive: '2 days ago', status: 'Active', address: 'Makati City' },
@@ -443,23 +450,28 @@ const ClientRecords = () => {
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <DashboardNavbar activeTab="Client Records" theme={theme} darkMode={darkMode} setDarkMode={setDarkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
-        {currentView === 'list' ? (
-          <ClientList 
-            clients={clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))}
-            onSelectClient={(client) => { setSelectedClient(client); setCurrentView('details'); }}
-            onOpenNewClient={() => setIsNewClientOpen(true)}
-            theme={theme}
-            darkMode={darkMode}
-          />
+        {/* --- CONTENT AREA: SKELETON OR REAL DATA --- */}
+        {isLoading ? (
+          <ClientSkeleton theme={theme} darkMode={darkMode} rows={8} />
         ) : (
-          <ClientDetails 
-            client={selectedClient || clients[0]} 
-            onBack={() => setCurrentView('list')}
-            activeDetailTab={activeDetailTab}
-            setActiveDetailTab={setActiveDetailTab}
-            theme={theme}
-            darkMode={darkMode}
-          />
+          currentView === 'list' ? (
+            <ClientList 
+              clients={clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))}
+              onSelectClient={(client) => { setSelectedClient(client); setCurrentView('details'); }}
+              onOpenNewClient={() => setIsNewClientOpen(true)}
+              theme={theme}
+              darkMode={darkMode}
+            />
+          ) : (
+            <ClientDetails 
+              client={selectedClient || clients[0]} 
+              onBack={() => setCurrentView('list')}
+              activeDetailTab={activeDetailTab}
+              setActiveDetailTab={setActiveDetailTab}
+              theme={theme}
+              darkMode={darkMode}
+            />
+          )
         )}
       </main>
 

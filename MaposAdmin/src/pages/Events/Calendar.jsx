@@ -7,6 +7,7 @@ import {
 // Import Layout Components
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
+import { CalendarSkeleton } from '../../components/SkeletonLoaders'; // <--- IMPORT SKELETON
 
 // --- 1. ANIMATION COMPONENT ---
 const FadeIn = ({ children, delay = 0 }) => {
@@ -218,6 +219,16 @@ const CalendarPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
+  // --- 1. ADD LOADING STATE ---
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate API Fetch
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+  // ---------------------------
+
   // --- Theme Logic ---
   useEffect(() => {
     localStorage.setItem('sidebarState', JSON.stringify(sidebarOpen));
@@ -383,133 +394,138 @@ const CalendarPage = () => {
           setSearchQuery={setSearchQuery}
         />
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 no-scrollbar">
-          
-          <FadeIn>
-            <div className="flex flex-col lg:flex-row gap-8 h-full">
-              
-              {/* --- LEFT: Calendar Grid --- */}
-              <div className="flex-1 flex flex-col h-full">
-                <div className="flex justify-between items-end mb-6">
-                  <div>
-                    <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText}`}>Schedule</span>
-                    <h2 className="font-serif text-3xl md:text-4xl italic mt-1">
-                      {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                    </h2>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className={`flex border ${theme.border} rounded-sm overflow-hidden`}>
-                      <button onClick={() => changeMonth(-1)} className={`p-2 hover:bg-[#C9A25D] hover:text-white transition-colors ${theme.subText}`}>
-                        <ChevronLeft size={18} strokeWidth={1} />
-                      </button>
-                      <div className={`w-[1px] ${theme.border}`}></div>
-                      <button onClick={() => changeMonth(1)} className={`p-2 hover:bg-[#C9A25D] hover:text-white transition-colors ${theme.subText}`}>
-                        <ChevronRight size={18} strokeWidth={1} />
-                      </button>
+        {/* --- 2. WRAP CONTENT WITH LOADING CHECK --- */}
+        {isLoading ? (
+          <CalendarSkeleton theme={theme} darkMode={darkMode} />
+        ) : (
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 no-scrollbar">
+            
+            <FadeIn>
+              <div className="flex flex-col lg:flex-row gap-8 h-full">
+                
+                {/* --- LEFT: Calendar Grid --- */}
+                <div className="flex-1 flex flex-col h-full">
+                  <div className="flex justify-between items-end mb-6">
+                    <div>
+                      <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText}`}>Schedule</span>
+                      <h2 className="font-serif text-3xl md:text-4xl italic mt-1">
+                        {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </h2>
                     </div>
                     
-                    {/* New Event Button */}
-                    <button 
-                      onClick={() => { setEditingEvent(null); setIsModalOpen(true); }}
-                      className="flex items-center gap-2 bg-[#1c1c1c] text-white px-4 py-2 text-[10px] uppercase tracking-widest hover:bg-[#C9A25D] transition-colors"
-                    >
-                      <Plus size={14} /> New Event
-                    </button>
-                  </div>
-                </div>
-
-                <div className={`border-t border-l ${theme.border} ${theme.cardBg}`}>
-                  {/* HEADER ROW - FIX for Dark Mode Header */}
-                  <div className="grid grid-cols-7">
-                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
-                      <div 
-                        key={day} 
-                        className={`
-                          py-3 text-center text-[10px] tracking-[0.2em] border-b border-r ${theme.border}
-                          ${darkMode ? 'bg-[#141414] text-stone-500' : 'bg-stone-50 text-stone-500'}
-                        `}
+                    <div className="flex items-center gap-2">
+                      <div className={`flex border ${theme.border} rounded-sm overflow-hidden`}>
+                        <button onClick={() => changeMonth(-1)} className={`p-2 hover:bg-[#C9A25D] hover:text-white transition-colors ${theme.subText}`}>
+                          <ChevronLeft size={18} strokeWidth={1} />
+                        </button>
+                        <div className={`w-[1px] ${theme.border}`}></div>
+                        <button onClick={() => changeMonth(1)} className={`p-2 hover:bg-[#C9A25D] hover:text-white transition-colors ${theme.subText}`}>
+                          <ChevronRight size={18} strokeWidth={1} />
+                        </button>
+                      </div>
+                      
+                      {/* New Event Button */}
+                      <button 
+                        onClick={() => { setEditingEvent(null); setIsModalOpen(true); }}
+                        className="flex items-center gap-2 bg-[#1c1c1c] text-white px-4 py-2 text-[10px] uppercase tracking-widest hover:bg-[#C9A25D] transition-colors"
                       >
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-7">
-                    {renderCalendarGrid()}
-                  </div>
-                </div>
-              </div>
-
-              {/* --- RIGHT: Agenda / Details Panel --- */}
-              <div className="w-full lg:w-80 flex-shrink-0">
-                <div className={`h-full border ${theme.border} ${theme.cardBg} p-6 flex flex-col`}>
-                  
-                  <div className="mb-8">
-                    <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText}`}>Selected Date</span>
-                    <h3 className="font-serif text-3xl mt-2">
-                      {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                    </h3>
+                        <Plus size={14} /> New Event
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto space-y-4 no-scrollbar">
-                    {getEventsForDay(selectedDate).length > 0 ? (
-                      getEventsForDay(selectedDate).map((event) => (
+                  <div className={`border-t border-l ${theme.border} ${theme.cardBg}`}>
+                    {/* HEADER ROW - FIX for Dark Mode Header */}
+                    <div className="grid grid-cols-7">
+                      {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
                         <div 
-                          key={event.id} 
-                          className={`p-4 border ${theme.border} hover:border-[#C9A25D]/50 transition-all group relative`}
+                          key={day} 
+                          className={`
+                            py-3 text-center text-[10px] tracking-[0.2em] border-b border-r ${theme.border}
+                            ${darkMode ? 'bg-[#141414] text-stone-500' : 'bg-stone-50 text-stone-500'}
+                          `}
                         >
-                          <div className="flex justify-between items-start mb-2">
-                            <span className={`text-[10px] uppercase px-2 py-0.5 rounded-full border ${
-                              event.type === 'Wedding' ? 'text-[#C9A25D] border-[#C9A25D]/30' : 
-                              event.type === 'Kitchen' ? 'text-red-400 border-red-400/30' : 
-                              event.type === 'Tasting' ? 'text-blue-400 border-blue-400/30' : 'text-stone-400 border-stone-400/30'
-                            }`}>
-                              {event.type}
-                            </span>
-                            
-                            {/* EDIT BUTTON */}
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setEditingEvent(event); setIsModalOpen(true); }}
-                              className="text-stone-400 hover:text-[#C9A25D] p-1"
-                            >
-                              <MoreHorizontal size={14} />
-                            </button>
-                          </div>
-                          
-                          <h4 className="font-serif text-lg leading-tight mb-3 group-hover:text-[#C9A25D] transition-colors">
-                            {event.title}
-                          </h4>
-                          
-                          <div className="space-y-2">
-                            <div className={`flex items-center gap-2 text-xs ${theme.subText}`}>
-                              <Clock size={12} /> {event.time}
-                            </div>
-                            {event.guests > 0 && (
-                              <div className={`flex items-center gap-2 text-xs ${theme.subText}`}>
-                                <Users size={12} /> {event.guests} Guests
-                              </div>
-                            )}
-                            <div className={`flex items-center gap-2 text-xs ${theme.subText}`}>
-                               <MapPin size={12} /> {event.type === 'Kitchen' ? 'Main Kitchen' : 'Grand Ballroom'}
-                            </div>
-                          </div>
+                          {day}
                         </div>
-                      ))
-                    ) : (
-                      <div className="h-40 flex flex-col items-center justify-center text-stone-400 border border-dashed border-stone-200 dark:border-stone-800">
-                        <span className="font-serif italic text-lg">No events</span>
-                        <span className="text-[10px] uppercase tracking-wider mt-1">Free Schedule</span>
-                      </div>
-                    )}
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7">
+                      {renderCalendarGrid()}
+                    </div>
                   </div>
-
                 </div>
+
+                {/* --- RIGHT: Agenda / Details Panel --- */}
+                <div className="w-full lg:w-80 flex-shrink-0">
+                  <div className={`h-full border ${theme.border} ${theme.cardBg} p-6 flex flex-col`}>
+                    
+                    <div className="mb-8">
+                      <span className={`text-[10px] uppercase tracking-[0.2em] ${theme.subText}`}>Selected Date</span>
+                      <h3 className="font-serif text-3xl mt-2">
+                        {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                      </h3>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-4 no-scrollbar">
+                      {getEventsForDay(selectedDate).length > 0 ? (
+                        getEventsForDay(selectedDate).map((event) => (
+                          <div 
+                            key={event.id} 
+                            className={`p-4 border ${theme.border} hover:border-[#C9A25D]/50 transition-all group relative`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <span className={`text-[10px] uppercase px-2 py-0.5 rounded-full border ${
+                                event.type === 'Wedding' ? 'text-[#C9A25D] border-[#C9A25D]/30' : 
+                                event.type === 'Kitchen' ? 'text-red-400 border-red-400/30' : 
+                                event.type === 'Tasting' ? 'text-blue-400 border-blue-400/30' : 'text-stone-400 border-stone-400/30'
+                              }`}>
+                                {event.type}
+                              </span>
+                              
+                              {/* EDIT BUTTON */}
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setEditingEvent(event); setIsModalOpen(true); }}
+                                className="text-stone-400 hover:text-[#C9A25D] p-1"
+                              >
+                                <MoreHorizontal size={14} />
+                              </button>
+                            </div>
+                            
+                            <h4 className="font-serif text-lg leading-tight mb-3 group-hover:text-[#C9A25D] transition-colors">
+                              {event.title}
+                            </h4>
+                            
+                            <div className="space-y-2">
+                              <div className={`flex items-center gap-2 text-xs ${theme.subText}`}>
+                                <Clock size={12} /> {event.time}
+                              </div>
+                              {event.guests > 0 && (
+                                <div className={`flex items-center gap-2 text-xs ${theme.subText}`}>
+                                  <Users size={12} /> {event.guests} Guests
+                                </div>
+                              )}
+                              <div className={`flex items-center gap-2 text-xs ${theme.subText}`}>
+                                <MapPin size={12} /> {event.type === 'Kitchen' ? 'Main Kitchen' : 'Grand Ballroom'}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="h-40 flex flex-col items-center justify-center text-stone-400 border border-dashed border-stone-200 dark:border-stone-800">
+                          <span className="font-serif italic text-lg">No events</span>
+                          <span className="text-[10px] uppercase tracking-wider mt-1">Free Schedule</span>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+
               </div>
+            </FadeIn>
 
-            </div>
-          </FadeIn>
-
-        </div>
+          </div>
+        )}
       </main>
 
       {/* Render Modal */}

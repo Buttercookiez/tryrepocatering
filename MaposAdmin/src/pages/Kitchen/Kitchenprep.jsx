@@ -6,8 +6,10 @@ import {
   Clock, X, ChevronDown, Layers
 } from 'lucide-react';
 
+// --- IMPORTS ---
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
+import { KitchenSkeleton } from '../../components/SkeletonLoaders';
 
 // --- 1. HELPER FUNCTIONS ---
 
@@ -190,6 +192,16 @@ const Kitchen = () => {
   const [deductedItems, setDeductedItems] = useState([]); 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // --- ADDED LOADING STATE HERE ---
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate API loading time
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+  // ------------------------------
+
   // --- MOCK DATA UPDATED WITH CATEGORIES ---
   const [ingredients, setIngredients] = useState([
     { id: 'ing-1', name: 'Wagyu Beef Strips', unit: 'kg', category: 'Meat', current: 5, max: 20 }, 
@@ -314,213 +326,218 @@ const Kitchen = () => {
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <DashboardNavbar activeTab="Kitchen Inventory & Menu" theme={theme} darkMode={darkMode} setDarkMode={setDarkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-        {/* --- HEADER --- */}
-        <div className={`px-6 md:px-12 pt-8 pb-4 flex flex-col`}>
-             <div className="flex justify-between items-end mb-8">
-                <div>
-                   <h2 className={`font-serif text-3xl italic ${theme.text}`}>Kitchen Operations</h2>
-                   <p className={`text-xs mt-1 ${theme.subText}`}>Manage stocks and view today's active menus.</p>
-                </div>
-                <div className="flex gap-4">
-                    {activeTab === 'Inventory' && (
-                        <button 
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="flex items-center gap-2 bg-[#1c1c1c] text-white px-6 py-2 text-[10px] uppercase tracking-widest hover:bg-[#C9A25D] transition-colors rounded-sm shadow-lg"
-                        >
-                            <Plus size={14} /> Add Ingredient
-                        </button>
-                    )}
-                    <div className={`flex border ${theme.border} rounded-sm p-1 ${theme.cardBg}`}>
-                        {['Inventory', 'Packages'].map(tab => (
-                            <button 
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-6 py-2 text-[10px] uppercase tracking-widest transition-all rounded-sm ${activeTab === tab ? 'bg-[#1c1c1c] text-white shadow-md' : `${theme.subText} hover:text-[#C9A25D]`}`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-             </div>
-        </div>
-
-        {/* --- MAIN CONTENT --- */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-6 md:px-12 pb-12 no-scrollbar">
-            <FadeIn>
-                {/* 1. INVENTORY VIEW WITH CATEGORIES */}
-                {activeTab === 'Inventory' && (
-                    <div className={`border ${theme.border} ${theme.cardBg} rounded-sm overflow-hidden`}>
-                        <div className={`grid grid-cols-12 gap-6 px-8 py-4 border-b ${theme.border} bg-[#C9A25D]/10 text-[10px] uppercase tracking-widest font-bold text-stone-500`}>
-                            <div className="col-span-4 flex items-center">Ingredient Name</div>
-                            <div className="col-span-5 flex items-center">Stock Level</div>
-                            <div className="col-span-3 text-right flex items-center justify-end">Adjustment</div>
+    {/* --- ADDED LOGIC: IF LOADING, SHOW SKELETON, ELSE SHOW CONTENT --- */}
+        {isLoading ? (
+            <KitchenSkeleton theme={theme} darkMode={darkMode} />
+        ) : (
+            <>
+                {/* --- HEADER --- */}
+                <div className={`px-6 md:px-12 pt-8 pb-4 flex flex-col`}>
+                    <div className="flex justify-between items-end mb-8">
+                        <div>
+                        <h2 className={`font-serif text-3xl italic ${theme.text}`}>Kitchen Operations</h2>
+                        <p className={`text-xs mt-1 ${theme.subText}`}>Manage stocks and view today's active menus.</p>
                         </div>
-                        
-                        <div className={`divide-y ${darkMode ? 'divide-stone-800' : 'divide-stone-100'}`}>
-                            {sortedCategories.length > 0 ? sortedCategories.map(category => (
-                                <React.Fragment key={category}>
-                                    {/* Category Header */}
-                                    <div className={`px-8 py-3 bg-stone-50 dark:bg-stone-900 border-y ${theme.border} flex items-center gap-2`}>
-                                        <Layers size={14} className="text-[#C9A25D]" />
-                                        <span className="text-xs font-bold uppercase tracking-widest text-stone-400">{category}</span>
-                                    </div>
-
-                                    {/* Items in Category */}
-                                    {groupedInventory[category].map((item) => (
-                                        <div key={item.id} className={`grid grid-cols-12 gap-6 px-8 py-6 items-center group ${theme.hoverBg} transition-colors`}>
-                                            <div className="col-span-4 flex flex-col justify-center">
-                                                <p className={`font-serif text-lg ${theme.text} leading-tight`}>{item.name}</p>
-                                                <p className="text-[10px] text-[#C9A25D] mt-1 font-sans font-medium">Per {item.unit}</p>
-                                            </div>
-                                            <div className="col-span-5 pr-4">
-                                                <VisualStockBar current={item.current} max={item.max} theme={theme} />
-                                            </div>
-                                            <div className="col-span-3 flex justify-end items-center gap-3">
-                                                <button onClick={() => handleIncrement(item.id, -1)} className={`w-8 h-8 flex items-center justify-center border ${theme.border} rounded-sm hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors`}>
-                                                    <Minus size={14} />
-                                                </button>
-                                                <div className="relative">
-                                                    <input 
-                                                        type="number" 
-                                                        value={item.current} 
-                                                        onChange={(e) => handleManualInput(item.id, e.target.value)}
-                                                        className={`w-16 text-center bg-transparent border-b ${theme.border} py-1 text-base font-serif focus:border-[#C9A25D] focus:outline-none ${theme.text}`}
-                                                    />
-                                                    <span className="absolute -top-3 left-0 w-full text-center text-[8px] text-stone-400 uppercase">Qty</span>
-                                                </div>
-                                                <button onClick={() => handleIncrement(item.id, 1)} className={`w-8 h-8 flex items-center justify-center border ${theme.border} rounded-sm hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors`}>
-                                                    <Plus size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </React.Fragment>
-                            )) : (
-                                <div className="p-8 text-center text-stone-400 text-sm">No ingredients found.</div>
+                        <div className="flex gap-4">
+                            {activeTab === 'Inventory' && (
+                                <button 
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    className="flex items-center gap-2 bg-[#1c1c1c] text-white px-6 py-2 text-[10px] uppercase tracking-widest hover:bg-[#C9A25D] transition-colors rounded-sm shadow-lg"
+                                >
+                                    <Plus size={14} /> Add Ingredient
+                                </button>
                             )}
+                            <div className={`flex border ${theme.border} rounded-sm p-1 ${theme.cardBg}`}>
+                                {['Inventory', 'Packages'].map(tab => (
+                                    <button 
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`px-6 py-2 text-[10px] uppercase tracking-widest transition-all rounded-sm ${activeTab === tab ? 'bg-[#1c1c1c] text-white shadow-md' : `${theme.subText} hover:text-[#C9A25D]`}`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                )}
+                </div>
 
-                {/* 2. PACKAGES VIEW */}
-                {activeTab === 'Packages' && (
-                    <div className="space-y-12">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Calendar size={18} className="text-[#C9A25D]" />
-                            <h3 className={`font-serif text-2xl ${theme.text}`}>
-                                Menu for Today <span className="text-stone-400 italic text-lg">({todaysDate})</span>
-                            </h3>
-                        </div>
-
-                        {todaysPackages.length === 0 ? (
-                            <div className={`p-12 text-center border border-dashed ${theme.border} rounded-sm`}>
-                                <p className={theme.subText}>No active packages booked for today.</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-12">
-                                {todaysPackages.map((booking) => {
-                                    const menu = packageMenus[booking.packageId];
-                                    return (
-                                        <div key={booking.id} className={`border ${theme.border} ${theme.cardBg} rounded-sm overflow-hidden flex flex-col md:flex-row shadow-sm h-[600px]`}>
-                                            {/* LEFT: Package Info */}
-                                            <div className="w-full md:w-80 flex-shrink-0 border-r border-stone-200 dark:border-stone-800 flex flex-col">
-                                                <div className="p-8 border-b border-stone-100 dark:border-stone-800 bg-[#C9A25D]/5">
-                                                    <span className="text-[10px] uppercase tracking-widest text-[#C9A25D] font-bold block mb-2">Selected Package</span>
-                                                    <h4 className={`font-serif text-3xl ${theme.text}`}>{menu.name}</h4>
-                                                    <div className="mt-4 flex items-center gap-2 text-xs text-stone-500">
-                                                        <Clock size={14} /> {booking.time}
-                                                    </div>
-                                                </div>
-                                                <div className={`p-8 flex-1 ${theme.cardBg} flex flex-col justify-center`}> 
-                                                    <div className="space-y-8">
-                                                        <div>
-                                                            <p className="text-[10px] uppercase tracking-widest text-stone-400 mb-2 flex items-center gap-2"><Users size={12}/> Client (Who)</p>
-                                                            <p className={`text-xl font-serif ${theme.text}`}>{booking.client}</p>
-                                                            <p className={`text-xs ${theme.subText} mt-1`}>{booking.guests} Guests</p>
-                                                        </div>
-                                                        <div className={`w-full h-[1px] ${theme.border} border-t border-dashed`}></div>
-                                                        <div>
-                                                            <p className="text-[10px] uppercase tracking-widest text-stone-400 mb-2 flex items-center gap-2"><MapPin size={12}/> Venue (Where)</p>
-                                                            <p className={`text-lg font-serif ${theme.text}`}>{booking.venue}</p>
-                                                            <p className={`text-xs ${theme.subText} mt-1`}>{booking.type}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                {/* --- MAIN CONTENT --- */}
+                <div className="flex-1 overflow-x-hidden overflow-y-auto px-6 md:px-12 pb-12 no-scrollbar">
+                    <FadeIn>
+                        {/* 1. INVENTORY VIEW WITH CATEGORIES */}
+                        {activeTab === 'Inventory' && (
+                            <div className={`border ${theme.border} ${theme.cardBg} rounded-sm overflow-hidden`}>
+                                <div className={`grid grid-cols-12 gap-6 px-8 py-4 border-b ${theme.border} bg-[#C9A25D]/10 text-[10px] uppercase tracking-widest font-bold text-stone-500`}>
+                                    <div className="col-span-4 flex items-center">Ingredient Name</div>
+                                    <div className="col-span-5 flex items-center">Stock Level</div>
+                                    <div className="col-span-3 text-right flex items-center justify-end">Adjustment</div>
+                                </div>
+                                
+                                <div className={`divide-y ${darkMode ? 'divide-stone-800' : 'divide-stone-100'}`}>
+                                    {sortedCategories.length > 0 ? sortedCategories.map(category => (
+                                        <React.Fragment key={category}>
+                                            {/* Category Header */}
+                                            <div className={`px-8 py-3 bg-stone-50 dark:bg-stone-900 border-y ${theme.border} flex items-center gap-2`}>
+                                                <Layers size={14} className="text-[#C9A25D]" />
+                                                <span className="text-xs font-bold uppercase tracking-widest text-stone-400">{category}</span>
                                             </div>
 
-                                            {/* RIGHT: Menu & Ingredients */}
-                                            <div className="flex-1 p-8 flex flex-col min-w-0">
-                                                <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                                                     <p className="text-[10px] uppercase tracking-widest text-stone-400">Course Breakdown & Ingredients</p>
-                                                     <p className="text-[10px] uppercase tracking-widest text-red-400 flex items-center gap-1"><AlertTriangle size={10}/> Tap circle to deduct stock</p>
-                                                </div>
-                                                
-                                                <div className="overflow-y-auto custom-scrollbar pr-4 space-y-6 flex-1">
-                                                    {menu.items.map((dish, idx) => (
-                                                        <div key={idx} className={`border ${theme.border} rounded-sm p-5`}>
-                                                            <h5 className={`font-serif text-xl ${theme.text} mb-4 flex items-center gap-2`}>
-                                                                <Utensils size={14} className="text-[#C9A25D]" /> {dish.name}
-                                                            </h5>
-                                                            
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                                {dish.ingredients.map((ing, i) => {
-                                                                    const uniqueKey = `${booking.id}-${idx}-${ing.id}`;
-                                                                    const isDeducted = deductedItems.includes(uniqueKey);
-                                                                    const stockItem = ingredients.find(inv => inv.id === ing.id);
-                                                                    const isCritical = stockItem && stockItem.current < ing.needed;
-
-                                                                    // --- FIX: UPDATED BACKGROUND COLORS FOR DARK MODE ---
-                                                                    // Using dark:bg-stone-900 instead of default/white in dark mode
-                                                                    return (
-                                                                        <div 
-                                                                            key={i} 
-                                                                            className={`
-                                                                                flex items-center justify-between p-4 rounded-sm border transition-all duration-300 shadow-sm
-                                                                                ${isDeducted 
-                                                                                    ? 'bg-emerald-500/10 border-emerald-500/30' 
-                                                                                    : `bg-stone-50 border-stone-200 hover:border-[#C9A25D] dark:bg-stone-900 dark:border-stone-700 dark:hover:border-[#C9A25D]`
-                                                                                }
-                                                                            `}
-                                                                        >
-                                                                            <div className="flex flex-col">
-                                                                                <span className={`text-xs font-bold ${isDeducted ? 'text-emerald-500 line-through' : theme.text}`}>
-                                                                                    {ing.name}
-                                                                                </span>
-                                                                                <span className="text-[10px] text-stone-400 mt-1">
-                                                                                    Required: {ing.needed} {stockItem?.unit}
-                                                                                </span>
-                                                                                {isCritical && !isDeducted && <span className="text-[9px] text-red-500 font-bold uppercase mt-1">Insufficient Stock</span>}
-                                                                            </div>
-
-                                                                            <button 
-                                                                                onClick={() => handleDeduct(uniqueKey, ing.id, ing.needed)}
-                                                                                disabled={isDeducted}
-                                                                                className={`
-                                                                                    transition-all duration-300 transform active:scale-90
-                                                                                    ${isDeducted ? 'text-emerald-500' : 'text-stone-300 hover:text-[#C9A25D]'}
-                                                                                `}
-                                                                            >
-                                                                                {isDeducted ? <CheckCircle size={22} fill="currentColor" className="text-emerald-900/20"/> : <Circle size={22} strokeWidth={1.5} />}
-                                                                            </button>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
+                                            {/* Items in Category */}
+                                            {groupedInventory[category].map((item) => (
+                                                <div key={item.id} className={`grid grid-cols-12 gap-6 px-8 py-6 items-center group ${theme.hoverBg} transition-colors`}>
+                                                    <div className="col-span-4 flex flex-col justify-center">
+                                                        <p className={`font-serif text-lg ${theme.text} leading-tight`}>{item.name}</p>
+                                                        <p className="text-[10px] text-[#C9A25D] mt-1 font-sans font-medium">Per {item.unit}</p>
+                                                    </div>
+                                                    <div className="col-span-5 pr-4">
+                                                        <VisualStockBar current={item.current} max={item.max} theme={theme} />
+                                                    </div>
+                                                    <div className="col-span-3 flex justify-end items-center gap-3">
+                                                        <button onClick={() => handleIncrement(item.id, -1)} className={`w-8 h-8 flex items-center justify-center border ${theme.border} rounded-sm hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors`}>
+                                                            <Minus size={14} />
+                                                        </button>
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="number" 
+                                                                value={item.current} 
+                                                                onChange={(e) => handleManualInput(item.id, e.target.value)}
+                                                                className={`w-16 text-center bg-transparent border-b ${theme.border} py-1 text-base font-serif focus:border-[#C9A25D] focus:outline-none ${theme.text}`}
+                                                            />
+                                                            <span className="absolute -top-3 left-0 w-full text-center text-[8px] text-stone-400 uppercase">Qty</span>
                                                         </div>
-                                                    ))}
+                                                        <button onClick={() => handleIncrement(item.id, 1)} className={`w-8 h-8 flex items-center justify-center border ${theme.border} rounded-sm hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 transition-colors`}>
+                                                            <Plus size={14} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-
-                                        </div>
-                                    );
-                                })}
+                                            ))}
+                                        </React.Fragment>
+                                    )) : (
+                                        <div className="p-8 text-center text-stone-400 text-sm">No ingredients found.</div>
+                                    )}
+                                </div>
                             </div>
                         )}
-                    </div>
-                )}
-            </FadeIn>
-        </div>
+
+                        {/* 2. PACKAGES VIEW */}
+                        {activeTab === 'Packages' && (
+                            <div className="space-y-12">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <Calendar size={18} className="text-[#C9A25D]" />
+                                    <h3 className={`font-serif text-2xl ${theme.text}`}>
+                                        Menu for Today <span className="text-stone-400 italic text-lg">({todaysDate})</span>
+                                    </h3>
+                                </div>
+
+                                {todaysPackages.length === 0 ? (
+                                    <div className={`p-12 text-center border border-dashed ${theme.border} rounded-sm`}>
+                                        <p className={theme.subText}>No active packages booked for today.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-12">
+                                        {todaysPackages.map((booking) => {
+                                            const menu = packageMenus[booking.packageId];
+                                            return (
+                                                <div key={booking.id} className={`border ${theme.border} ${theme.cardBg} rounded-sm overflow-hidden flex flex-col md:flex-row shadow-sm h-[600px]`}>
+                                                    {/* LEFT: Package Info */}
+                                                    <div className="w-full md:w-80 flex-shrink-0 border-r border-stone-200 dark:border-stone-800 flex flex-col">
+                                                        <div className="p-8 border-b border-stone-100 dark:border-stone-800 bg-[#C9A25D]/5">
+                                                            <span className="text-[10px] uppercase tracking-widest text-[#C9A25D] font-bold block mb-2">Selected Package</span>
+                                                            <h4 className={`font-serif text-3xl ${theme.text}`}>{menu.name}</h4>
+                                                            <div className="mt-4 flex items-center gap-2 text-xs text-stone-500">
+                                                                <Clock size={14} /> {booking.time}
+                                                            </div>
+                                                        </div>
+                                                        <div className={`p-8 flex-1 ${theme.cardBg} flex flex-col justify-center`}> 
+                                                            <div className="space-y-8">
+                                                                <div>
+                                                                    <p className="text-[10px] uppercase tracking-widest text-stone-400 mb-2 flex items-center gap-2"><Users size={12}/> Client (Who)</p>
+                                                                    <p className={`text-xl font-serif ${theme.text}`}>{booking.client}</p>
+                                                                    <p className={`text-xs ${theme.subText} mt-1`}>{booking.guests} Guests</p>
+                                                                </div>
+                                                                <div className={`w-full h-[1px] ${theme.border} border-t border-dashed`}></div>
+                                                                <div>
+                                                                    <p className="text-[10px] uppercase tracking-widest text-stone-400 mb-2 flex items-center gap-2"><MapPin size={12}/> Venue (Where)</p>
+                                                                    <p className={`text-lg font-serif ${theme.text}`}>{booking.venue}</p>
+                                                                    <p className={`text-xs ${theme.subText} mt-1`}>{booking.type}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* RIGHT: Menu & Ingredients */}
+                                                    <div className="flex-1 p-8 flex flex-col min-w-0">
+                                                        <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                                                            <p className="text-[10px] uppercase tracking-widest text-stone-400">Course Breakdown & Ingredients</p>
+                                                            <p className="text-[10px] uppercase tracking-widest text-red-400 flex items-center gap-1"><AlertTriangle size={10}/> Tap circle to deduct stock</p>
+                                                        </div>
+                                                        
+                                                        <div className="overflow-y-auto custom-scrollbar pr-4 space-y-6 flex-1">
+                                                            {menu.items.map((dish, idx) => (
+                                                                <div key={idx} className={`border ${theme.border} rounded-sm p-5`}>
+                                                                    <h5 className={`font-serif text-xl ${theme.text} mb-4 flex items-center gap-2`}>
+                                                                        <Utensils size={14} className="text-[#C9A25D]" /> {dish.name}
+                                                                    </h5>
+                                                                    
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                        {dish.ingredients.map((ing, i) => {
+                                                                            const uniqueKey = `${booking.id}-${idx}-${ing.id}`;
+                                                                            const isDeducted = deductedItems.includes(uniqueKey);
+                                                                            const stockItem = ingredients.find(inv => inv.id === ing.id);
+                                                                            const isCritical = stockItem && stockItem.current < ing.needed;
+
+                                                                            return (
+                                                                                <div 
+                                                                                    key={i} 
+                                                                                    className={`
+                                                                                        flex items-center justify-between p-4 rounded-sm border transition-all duration-300 shadow-sm
+                                                                                        ${isDeducted 
+                                                                                            ? 'bg-emerald-500/10 border-emerald-500/30' 
+                                                                                            : `bg-stone-50 border-stone-200 hover:border-[#C9A25D] dark:bg-stone-900 dark:border-stone-700 dark:hover:border-[#C9A25D]`
+                                                                                        }
+                                                                                    `}
+                                                                                >
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className={`text-xs font-bold ${isDeducted ? 'text-emerald-500 line-through' : theme.text}`}>
+                                                                                            {ing.name}
+                                                                                        </span>
+                                                                                        <span className="text-[10px] text-stone-400 mt-1">
+                                                                                            Required: {ing.needed} {stockItem?.unit}
+                                                                                        </span>
+                                                                                        {isCritical && !isDeducted && <span className="text-[9px] text-red-500 font-bold uppercase mt-1">Insufficient Stock</span>}
+                                                                                    </div>
+
+                                                                                    <button 
+                                                                                        onClick={() => handleDeduct(uniqueKey, ing.id, ing.needed)}
+                                                                                        disabled={isDeducted}
+                                                                                        className={`
+                                                                                            transition-all duration-300 transform active:scale-90
+                                                                                            ${isDeducted ? 'text-emerald-500' : 'text-stone-300 hover:text-[#C9A25D]'}
+                                                                                        `}
+                                                                                    >
+                                                                                        {isDeducted ? <CheckCircle size={22} fill="currentColor" className="text-emerald-900/20"/> : <Circle size={22} strokeWidth={1.5} />}
+                                                                                    </button>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </FadeIn>
+                </div>
+            </>
+        )}
 
         <AddIngredientModal 
             isOpen={isAddModalOpen} 

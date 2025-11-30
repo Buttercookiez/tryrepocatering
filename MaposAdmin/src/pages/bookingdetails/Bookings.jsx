@@ -29,12 +29,24 @@ const Bookings = () => {
 
   const [bookings, setBookings] = useState([]);
 
+  // --- ADDED LOADING STATE ---
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
+    setIsLoading(true); // Start loading
     api
       .get("/inquiries")
-      .then((res) => setBookings(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        setBookings(res.data);
+        // Add a small delay so the skeleton doesn't flicker too fast (smooth UX)
+        setTimeout(() => setIsLoading(false), 800); 
+      })
+      .catch((err) => {
+        console.error(err);
+        setIsLoading(false);
+      });
   }, []);
+  // ---------------------------
 
   // 2. Safety Check: If we are in 'details' mode but have no booking selected (e.g., after refresh), go back to list
   useEffect(() => {
@@ -111,12 +123,13 @@ const Bookings = () => {
             onOpenNewBooking={() => setIsNewBookingOpen(true)}
             theme={theme}
             darkMode={darkMode}
+            isLoading={isLoading} // <--- PASSING THE LOADING STATE HERE
           />
         ) : (
           <BookingDetails
-            booking={selectedBooking} // REMOVED "|| bookings[0]"
+            booking={selectedBooking} 
             onBack={() => {
-              setSelectedBooking(null); // Clear selection when going back
+              setSelectedBooking(null); 
               setCurrentView("list");
             }}
             activeDetailTab={activeDetailTab}

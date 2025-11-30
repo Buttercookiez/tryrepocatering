@@ -1,7 +1,7 @@
 import React from 'react';
 import { Lock, FileSignature, Loader2, CheckCircle, Calculator, Check, Eye } from "lucide-react";
-import { renderStatusBadge } from "../components/BookingHelpers";
-import QuotationPreviewCard from "../components/QuotationPreviewCard";
+import { renderStatusBadge } from "../components/BookingHelpers"; // Adjust path if needed based on your folder structure
+import QuotationPreviewCard from "../components/QuotationPreviewCard"; // Adjust path if needed
 
 const ContractTab = ({ 
     details, theme, darkMode, bookingData,
@@ -10,8 +10,35 @@ const ContractTab = ({
     handleSendFinalQuotation, isSending, emailStatus 
 }) => {
   
-  // Logic to unlock the screen
-  const isUnlocked = details.status === "Proposal Accepted" || details.status === "For Approval" || clientAcceptedOverride;
+  // 1. FIXED UNLOCK LOGIC
+  // Only unlock if the client has explicitly accepted, 
+  // OR if the contract was already sent/confirmed previously,
+  // OR if the Admin clicks the override button.
+  const isUnlocked = 
+    details.status === "Proposal Accepted" || 
+    details.status === "Contract Sent" || 
+    details.status === "Confirmed" || 
+    clientAcceptedOverride;
+
+  // 2. DATA PREPARATION (The "Frozen" Logic)
+  const proposalData = bookingData?.proposal || {};
+  const isApproved = proposalData.isApproved;
+
+  // If approved, use the package the client actually clicked.
+  // If not (Admin Override), use the current draft selection.
+  const displayPackageId = isApproved 
+      ? proposalData.clientSelectedPackage 
+      : (proposalData.selectedPackageId || 'premium');
+
+  const displayAddOns = isApproved 
+      ? proposalData.clientSelectedAddOns 
+      : (proposalData.addOns || []);
+
+  // 3. FINANCIAL CALCULATION
+  // If approved, we assume 'proposalTotal' passed from parent is already the Final Agreed Amount.
+  // If draft, 'proposalTotal' is usually just Food Cost, so we add 10% Service Charge for the preview.
+  const calculatedGrandTotal = isApproved ? proposalTotal : (proposalTotal * 1.1);
+  const calculatedBalance = calculatedGrandTotal - downpaymentAmount;
 
   return (
     <div className="max-w-full mx-auto h-full flex flex-col justify-center animate-in fade-in duration-300">
@@ -64,14 +91,16 @@ const ContractTab = ({
                               <div className={`p-6 border border-stone-200 dark:border-stone-700 rounded-sm flex justify-between items-center bg-transparent`}>
                                 <div className="flex flex-col">
                                   <span className={`font-bold ${theme.text} text-sm`}>Contract Grand Total</span>
-                                  <span className="text-[10px] text-stone-500">Based on proposal + 10% Service Charge</span>
+                                  <span className="text-[10px] text-stone-500">
+                                      {isApproved ? "Client Agreed Amount" : "Includes estimated 10% Service Charge"}
+                                  </span>
                                 </div>
-                                <span className="font-serif text-2xl text-[#C9A25D]">₱ {(proposalTotal * 1.1).toLocaleString()}</span>
+                                <span className="font-serif text-2xl text-[#C9A25D]">₱ {calculatedGrandTotal.toLocaleString()}</span>
                               </div>
 
-                              {/* INPUTS (Clean White/Transparent) */}
+                              {/* INPUTS */}
                               <div>
-                                  <label className={`text-[10px] uppercase tracking-widest ${theme.subText} block mb-2 font-bold`}>Required Downpayment (50%)</label>
+                                  <label className={`text-[10px] uppercase tracking-widest ${theme.subText} block mb-2 font-bold`}>Required Downpayment</label>
                                   <div className={`flex items-center border ${theme.border} rounded-sm px-4 py-3 focus-within:border-[#C9A25D] transition-colors`}>
                                       <span className="text-stone-500 mr-3 font-serif text-lg">₱</span>
                                       <input 
@@ -83,7 +112,7 @@ const ContractTab = ({
                                   </div>
                                   <div className="flex justify-between mt-2 text-[10px] text-stone-400">
                                       <span>Remaining Balance:</span>
-                                      <span className={theme.text}>₱ {((proposalTotal * 1.1) - downpaymentAmount).toLocaleString()}</span>
+                                      <span className={theme.text}>₱ {calculatedBalance.toLocaleString()}</span>
                                   </div>
                               </div>
 
@@ -143,8 +172,17 @@ const ContractTab = ({
                      </div>
                      
                      <QuotationPreviewCard 
-                        booking={{...details, addOns: bookingData?.addOns, selectedPackageId: bookingData?.selectedPackageId}}
-                        financials={{grandTotal: (proposalTotal*1.1), downpayment: downpaymentAmount, balance: (proposalTotal*1.1 - downpaymentAmount)}}
+                        booking={{
+                            ...details, 
+                            // Pass the frozen/correct IDs to the card
+                            selectedPackageId: displayPackageId,
+                            addOns: displayAddOns
+                        }}
+                        financials={{
+                            grandTotal: calculatedGrandTotal, 
+                            downpayment: downpaymentAmount, 
+                            balance: calculatedBalance
+                        }}
                         theme={theme}
                         darkMode={darkMode}
                      />

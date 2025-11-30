@@ -133,26 +133,26 @@ const ClientPaymentPage = () => {
         
         // PayMongo expects amount in CENTAVOS (e.g., 100 PHP = 10000 centavos)
         // Make sure your backend expects centavos or adjust this line accordingly
-        const amountInCentavos = amountInPhp * 100;
+        
 
-        try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            setGatewayStep(`Initializing ${paymentMethod === 'card' ? 'Card' : 'E-Wallet'} Transaction...`);
+       try {
+    // ... animation delays ...
+
+    console.log("💳 Initiating PayMongo Session:", {
+        amount: amountInPhp, // Send the exact PHP amount (e.g. 5000)
+        desc: `Payment for ${bookingData.refId}`
+    });
+
+    // ✅ UPDATE AXIOS CALL
+    const response = await axios.post(
+        "http://localhost:5000/api/paymongo/create-checkout-session", 
+        {
+            amount: amountInPhp, // <--- SEND RAW PHP AMOUNT
+            description: `${paymentType === 'downpayment' ? '50% Downpayment' : 'Full Payment'} - Ref: ${bookingData.refId}`,
+            remarks: `Client: ${bookingData.clientName}`
             
-            console.log("💳 Initiating PayMongo Session:", {
-                amount: amountInCentavos,
-                desc: `Payment for ${bookingData.refId}`
-            });
-
-            // ✅ REAL API CALL TO YOUR BACKEND
-            const response = await axios.post(
-                "http://localhost:5000/api/paymongo/create-checkout-session", 
-                {
-                    amount: amountInCentavos, 
-                    description: `${paymentType === 'downpayment' ? '50% Downpayment' : 'Full Payment'} - Ref: ${bookingData.refId}`,
-                    remarks: `Client: ${bookingData.clientName}`
-                }
-            );
+        }
+    );
 
             const { checkout_url } = response.data;
             
