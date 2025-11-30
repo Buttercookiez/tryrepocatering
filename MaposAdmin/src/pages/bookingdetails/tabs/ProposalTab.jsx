@@ -24,7 +24,9 @@ const ProposalTab = ({
       <div className="space-y-6">
         <div className={`border ${theme.border} ${theme.cardBg} p-6 rounded-sm`}>
           <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2 ${theme.text}`}><Utensils size={16} /> Selected Service Style</h4>
-          <div className={`p-6 border ${theme.border} rounded-sm bg-stone-50 dark:bg-stone-800/50 flex flex-col md:flex-row justify-between items-center gap-6`}>
+          
+          {/* --- UPDATED LINE: Removed background classes (bg-stone-50 dark:bg-stone-800/50) --- */}
+          <div className={`p-6 border ${theme.border} rounded-sm flex flex-col md:flex-row justify-between items-center gap-6`}>
               <div className="flex-1">
                   <h3 className={`font-serif text-2xl ${theme.text} mb-1`}>{formatString(details.serviceStyle)} Service</h3>
                   <p className={`text-xs ${theme.subText}`}>Requested by client for {details.guests} guests</p>

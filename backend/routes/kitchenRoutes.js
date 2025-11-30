@@ -1,16 +1,28 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express");
 const { 
   getInventory, 
+  getAddOns, 
   addIngredient, 
   updateStock, 
-  getDailyOrders 
-} = require('../controllers/kitchenController');
+  getKitchenOrders,
+  getMenus,
+  seedMenus,
+  updatePackage // <--- IMPORT THIS
+} = require("../controllers/kitchenController");
 
-// Define the Endpoints
-router.get('/inventory', getInventory);       // Fetch all items
-router.post('/inventory', addIngredient);     // Add new item
-router.put('/inventory/:id', updateStock);    // Update stock level
-router.get('/orders', getDailyOrders);        // Fetch orders for a date
+const router = express.Router();
+
+router.get("/inventory", getInventory);
+router.post("/inventory", addIngredient);
+router.put("/inventory/:id", updateStock);
+router.get("/orders", getKitchenOrders);
+router.get("/menus", getMenus);
+
+// --- THIS IS THE ROUTE YOU WERE MISSING ---
+router.put("/menus/:id", updatePackage); 
+// -----------------------------------------
+
+router.post("/seed-menus", seedMenus);
+router.get("/addons", getAddOns);
 
 module.exports = router;

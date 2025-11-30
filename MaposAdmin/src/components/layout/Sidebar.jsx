@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutGrid, Calendar, Users, CheckSquare, MapPin, 
   Package, DollarSign, TrendingUp, ChefHat, ChevronLeft, ChevronRight,
-  BookOpen // Added Icon for Bookings
+  BookOpen, Utensils // <--- Added Utensils icon here
 } from 'lucide-react';
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, theme }) => {
@@ -23,10 +23,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, theme }) => {
       label: "Management",
       items: [
         { id: 'Overview', icon: LayoutGrid, label: 'Dashboard', path: '/dashboard' },
-        { id: 'Bookings', icon: BookOpen, label: 'Booking Details', path: '/bookings' }, // <--- ADDED HERE
+        { id: 'Bookings', icon: BookOpen, label: 'Booking Details', path: '/bookings' }, 
         { id: 'Calendar', icon: Calendar, label: 'Events Calendar', path: '/events/calendar' },
         { id: 'Clients', icon: Users, label: 'Client Records', path: '/clients/records' },
-        { id: 'Tasks', icon: CheckSquare, label: 'Task Manager', path: '/tasks' },
+        
+        // --- REPLACED TASK MANAGER WITH MENUS & PACKAGES ---
+        { id: 'Menus', icon: Utensils, label: 'Menus & Packages', path: '/menus' },
       ]
     },
     {

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Lock, FileSignature, Loader2, CheckCircle, Calculator, Check, Eye } from "lucide-react";
-import { renderStatusBadge } from "../components/BookingHelpers"; // Adjust path if needed based on your folder structure
-import QuotationPreviewCard from "../components/QuotationPreviewCard"; // Adjust path if needed
+import { Lock, FileSignature, Loader2, CheckCircle, Calculator, Check, Eye, DollarSign, FileText } from "lucide-react";
+import { renderStatusBadge } from "../components/BookingHelpers";
+import QuotationPreviewCard from "../components/QuotationPreviewCard";
 
 const ContractTab = ({ 
     details, theme, darkMode, bookingData,
@@ -10,22 +10,17 @@ const ContractTab = ({
     handleSendFinalQuotation, isSending, emailStatus 
 }) => {
   
-  // 1. FIXED UNLOCK LOGIC
-  // Only unlock if the client has explicitly accepted, 
-  // OR if the contract was already sent/confirmed previously,
-  // OR if the Admin clicks the override button.
+  // 1. LOGIC: Check Unlock Status
   const isUnlocked = 
     details.status === "Proposal Accepted" || 
     details.status === "Contract Sent" || 
     details.status === "Confirmed" || 
     clientAcceptedOverride;
 
-  // 2. DATA PREPARATION (The "Frozen" Logic)
+  // 2. LOGIC: Data Prep
   const proposalData = bookingData?.proposal || {};
   const isApproved = proposalData.isApproved;
 
-  // If approved, use the package the client actually clicked.
-  // If not (Admin Override), use the current draft selection.
   const displayPackageId = isApproved 
       ? proposalData.clientSelectedPackage 
       : (proposalData.selectedPackageId || 'premium');
@@ -34,9 +29,7 @@ const ContractTab = ({
       ? proposalData.clientSelectedAddOns 
       : (proposalData.addOns || []);
 
-  // 3. FINANCIAL CALCULATION
-  // If approved, we assume 'proposalTotal' passed from parent is already the Final Agreed Amount.
-  // If draft, 'proposalTotal' is usually just Food Cost, so we add 10% Service Charge for the preview.
+  // 3. LOGIC: Financials
   const calculatedGrandTotal = isApproved ? proposalTotal : (proposalTotal * 1.1);
   const calculatedBalance = calculatedGrandTotal - downpaymentAmount;
 
@@ -44,148 +37,154 @@ const ContractTab = ({
     <div className="max-w-full mx-auto h-full flex flex-col justify-center animate-in fade-in duration-300">
       
       {!isUnlocked ? (
-          // --- LOCKED STATE VIEW ---
-          <div className={`flex flex-col items-center justify-center text-center p-20 border border-dashed ${theme.border} rounded-lg bg-transparent`}>
-              <div className="w-20 h-20 rounded-full border border-stone-200 dark:border-stone-700 flex items-center justify-center mb-6 shadow-sm">
-                  <Lock className="text-stone-400" size={30} />
+          // --- LOCKED STATE (Clean Empty State) ---
+          <div className={`flex flex-col items-center justify-center text-center py-24 px-8 border ${theme.border} ${theme.cardBg} rounded-sm`}>
+              {/* UPDATED: Transparent background */}
+              <div className="p-4 rounded-full bg-transparent border border-stone-200 dark:border-stone-800 mb-6 text-stone-400">
+                  <Lock size={32} />
               </div>
-              <h3 className={`font-serif text-3xl ${theme.text} mb-2`}>Awaiting Client Acceptance</h3>
-              <p className={`text-sm ${theme.subText} max-w-md mb-8`}>
-                  The official contract generator is locked. It will automatically unlock once the client has reviewed and accepted the initial proposal.
+              <h3 className={`font-serif text-2xl ${theme.text} mb-2`}>Contract Generation Locked</h3>
+              <p className={`text-sm ${theme.subText} max-w-md mb-8 leading-relaxed`}>
+                  The contract tools are disabled until the client accepts the initial proposal. You can manually override this if you have received offline acceptance.
               </p>
               <button 
                 onClick={() => setClientAcceptedOverride(true)} 
-                className="text-xs uppercase tracking-widest text-[#C9A25D] border border-[#C9A25D] px-8 py-3 rounded-sm hover:bg-[#C9A25D] hover:text-white transition-all shadow-sm flex items-center gap-2"
+                className="text-xs uppercase tracking-widest text-[#C9A25D] border border-[#C9A25D] px-8 py-3 rounded-sm hover:bg-[#C9A25D] hover:text-white transition-all shadow-sm flex items-center gap-2 font-bold"
               >
-                  <Lock size={12}/> Force Unlock (Admin Override)
+                  <Lock size={12}/> Admin Override
               </button>
           </div>
       ) : (
-          // --- UNLOCKED STATE VIEW ---
+          // --- UNLOCKED STATE (Grid Layout) ---
           <div>
-              {/* HEADER */}
-              <div className="flex flex-col md:flex-row justify-between items-end border-b border-stone-200 dark:border-stone-800 pb-6 mb-10">
+              {/* PAGE HEADER */}
+              <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h3 className={`font-serif text-3xl ${theme.text}`}>Contract & Payment</h3>
-                    <p className={`text-sm ${theme.subText} mt-1`}>Configure payment terms and preview the official quotation before sending.</p>
+                    <h3 className={`font-serif text-2xl ${theme.text}`}>Contract & Payment</h3>
+                    <p className={`text-xs ${theme.subText} mt-1`}>Ref No. {details.id}-CTR</p>
                 </div>
-                <div className="text-right mt-4 md:mt-0">
-                    <span className="block text-[10px] uppercase text-stone-400 font-bold mb-1">Current Status</span>
+                <div className="text-right">
                     {renderStatusBadge(details.status)}
                 </div>
               </div>
 
-              {/* TWO COLUMN LAYOUT */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                   
-                  {/* --- LEFT COLUMN: CONTROLS --- */}
-                  <div className="flex flex-col gap-6">
-                      <div className={`p-8 border ${theme.border} rounded-sm shadow-sm relative overflow-hidden bg-transparent`}>
-                          
-                          <h4 className={`text-xs uppercase font-bold ${theme.subText} mb-8 pb-2 border-b border-dashed border-stone-200 dark:border-stone-700 flex items-center gap-2`}>
-                              <FileSignature size={14} className="text-[#C9A25D]"/> Contract Configuration
+                  {/* --- LEFT COLUMN: CONFIGURATION CARD --- */}
+                  <div className="space-y-6">
+                      <div className={`border ${theme.border} ${theme.cardBg} p-8 rounded-sm`}>
+                          <h4 className={`text-xs font-bold uppercase tracking-widest mb-6 flex items-center gap-2 ${theme.text}`}>
+                              <FileSignature size={16} className="text-[#C9A25D]"/> Payment Configuration
                           </h4>
                           
-                          <div className={`space-y-8`}>
-                              {/* TOTAL DISPLAY */}
-                              <div className={`p-6 border border-stone-200 dark:border-stone-700 rounded-sm flex justify-between items-center bg-transparent`}>
+                          <div className="space-y-6">
+                              {/* 1. Grand Total Display */}
+                              {/* UPDATED: bg-transparent to remove white/gray box */}
+                              <div className={`p-5 rounded-sm bg-transparent border ${theme.border} flex justify-between items-center`}>
                                 <div className="flex flex-col">
-                                  <span className={`font-bold ${theme.text} text-sm`}>Contract Grand Total</span>
-                                  <span className="text-[10px] text-stone-500">
-                                      {isApproved ? "Client Agreed Amount" : "Includes estimated 10% Service Charge"}
+                                  <span className={`text-[10px] uppercase tracking-widest font-bold ${theme.subText}`}>Grand Total</span>
+                                  <span className="text-[10px] text-stone-400">
+                                      {isApproved ? "Client Agreed Amount" : "Incl. 10% Service Charge"}
                                   </span>
                                 </div>
                                 <span className="font-serif text-2xl text-[#C9A25D]">₱ {calculatedGrandTotal.toLocaleString()}</span>
                               </div>
 
-                              {/* INPUTS */}
+                              {/* 2. Downpayment Input */}
                               <div>
                                   <label className={`text-[10px] uppercase tracking-widest ${theme.subText} block mb-2 font-bold`}>Required Downpayment</label>
-                                  <div className={`flex items-center border ${theme.border} rounded-sm px-4 py-3 focus-within:border-[#C9A25D] transition-colors`}>
-                                      <span className="text-stone-500 mr-3 font-serif text-lg">₱</span>
+                                  {/* UPDATED: bg-transparent */}
+                                  <div className={`flex items-center border ${theme.border} rounded-sm px-4 py-3 focus-within:border-[#C9A25D] transition-colors bg-transparent`}>
+                                      <span className="text-stone-400 mr-3 text-sm">₱</span>
                                       <input 
                                         type="number" 
                                         value={downpaymentAmount} 
                                         onChange={(e) => setDownpaymentAmount(parseFloat(e.target.value) || 0)} 
-                                        className={`bg-transparent w-full focus:outline-none font-medium text-lg ${theme.text} no-spinner`}
+                                        className={`bg-transparent w-full focus:outline-none font-medium text-lg ${theme.text} no-spinner font-serif`}
+                                        placeholder="0.00"
                                       />
                                   </div>
-                                  <div className="flex justify-between mt-2 text-[10px] text-stone-400">
-                                      <span>Remaining Balance:</span>
-                                      <span className={theme.text}>₱ {calculatedBalance.toLocaleString()}</span>
+                                  <div className="flex justify-between mt-2 px-1">
+                                      <span className="text-[10px] text-stone-400 italic">Remaining Balance</span>
+                                      <span className={`text-xs font-bold ${theme.text}`}>₱ {calculatedBalance.toLocaleString()}</span>
                                   </div>
                               </div>
 
+                              {/* 3. Payment Terms */}
                               <div>
-                                  <label className={`text-[10px] uppercase tracking-widest ${theme.subText} block mb-2 font-bold`}>Legal Payment Terms</label>
-                                  <textarea 
-                                    rows="5" 
-                                    value={paymentTerms} 
-                                    onChange={(e) => setPaymentTerms(e.target.value)} 
-                                    className={`w-full bg-transparent border ${theme.border} rounded-sm p-4 text-sm focus:border-[#C9A25D] outline-none ${theme.text} shadow-none leading-relaxed resize-none`}
-                                  ></textarea>
+                                  <label className={`text-[10px] uppercase tracking-widest ${theme.subText} block mb-2 font-bold`}>Terms & Conditions</label>
+                                  <div className={`relative`}>
+                                    {/* UPDATED: bg-transparent */}
+                                    <textarea 
+                                        rows="6" 
+                                        value={paymentTerms} 
+                                        onChange={(e) => setPaymentTerms(e.target.value)} 
+                                        className={`w-full bg-transparent border ${theme.border} rounded-sm p-4 text-sm focus:border-[#C9A25D] outline-none ${theme.text} leading-relaxed resize-none`}
+                                    ></textarea>
+                                    <FileText size={14} className="absolute top-4 right-4 text-stone-300 pointer-events-none"/>
+                                  </div>
                               </div>
                           </div>
                       </div>
 
-                      {/* ACTION BUTTON */}
-                      <div>
+                      {/* ACTION BUTTON AREA */}
+                      <div className={`border-t border-stone-100 dark:border-stone-800 pt-6`}>
                         <button 
                             onClick={handleSendFinalQuotation} 
                             disabled={isSending || emailStatus === 'quoted'} 
-                            className={`w-full flex items-center justify-center gap-3 px-8 py-5 rounded-sm text-sm uppercase tracking-[0.2em] font-bold transition-all duration-300 shadow-lg 
+                            className={`w-full flex items-center justify-center gap-3 px-8 py-4 rounded-sm text-sm uppercase tracking-[0.15em] font-bold transition-all duration-300 shadow-md hover:shadow-lg
                                 ${emailStatus === 'quoted' 
-                                ? "bg-emerald-600 text-white cursor-default border border-emerald-600" 
-                                : "bg-[#C9A25D] text-white hover:bg-[#b08d55] border border-[#C9A25D]"} 
+                                ? "bg-emerald-600 text-white cursor-default" 
+                                : "bg-[#C9A25D] text-white hover:bg-[#b08d55]"} 
                                 disabled:opacity-70 disabled:cursor-not-allowed`}
                         >
                             {isSending ? (
-                                <><Loader2 size={18} className="animate-spin" /> Processing...</>
+                                <><Loader2 size={16} className="animate-spin" /> Processing Contract...</>
                             ) : emailStatus === 'quoted' ? (
-                                <><CheckCircle size={18} /> Contract & Link Sent</>
+                                <><CheckCircle size={16} /> Sent Successfully</>
                             ) : (
-                                <><Calculator size={18} /> Generate Link & Send Contract</>
+                                <><Calculator size={16} /> Generate & Send Contract</>
                             )}
                         </button>
                         
                         {emailStatus === 'quoted' && (
                             <p className="text-center text-emerald-500 text-xs mt-3 flex items-center justify-center gap-1 animate-in fade-in">
-                                <Check size={12}/> Secure Payment Link has been emailed to client.
+                                <Check size={12}/> Secure Payment Link has been emailed.
                             </p>
                         )}
-                        {!emailStatus && (
+                        {!emailStatus && !isSending && (
                             <p className="text-center text-[10px] text-stone-400 mt-3">
-                                Generates a secure link pointing to <u>localhost:3000</u>
+                                Action will email a secure payment link to <span className={theme.text}>{details.email}</span>
                             </p>
                         )}
                       </div>
                   </div>
 
                   {/* --- RIGHT COLUMN: PREVIEW --- */}
-                  <div className="flex flex-col h-full pl-0 xl:pl-6 border-l-0 xl:border-l border-dashed border-stone-200 dark:border-stone-800">
-                     <div className="mb-4 flex items-end justify-between pb-2 border-b border-[#C9A25D]/20">
-                         <div className="flex items-center gap-2">
-                             <Eye size={16} className="text-[#C9A25D]"/>
-                             <h3 className={`font-serif text-2xl text-[#C9A25D]`}>Client View Simulation</h3>
-                         </div>
+                  <div className="flex flex-col h-full">
+                     <div className="mb-4 flex items-center justify-between">
+                         <h4 className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${theme.text}`}>
+                              <Eye size={16} className="text-[#C9A25D]"/> Client View Simulation
+                          </h4>
                          <span className="text-[9px] uppercase tracking-widest text-stone-400 font-bold border border-stone-200 dark:border-stone-800 px-2 py-1 rounded">Live Render</span>
                      </div>
                      
-                     <QuotationPreviewCard 
-                        booking={{
-                            ...details, 
-                            // Pass the frozen/correct IDs to the card
-                            selectedPackageId: displayPackageId,
-                            addOns: displayAddOns
-                        }}
-                        financials={{
-                            grandTotal: calculatedGrandTotal, 
-                            downpayment: downpaymentAmount, 
-                            balance: calculatedBalance
-                        }}
-                        theme={theme}
-                        darkMode={darkMode}
-                     />
+                     <div className="flex-1">
+                        <QuotationPreviewCard 
+                            booking={{
+                                ...details, 
+                                selectedPackageId: displayPackageId,
+                                addOns: displayAddOns
+                            }}
+                            financials={{
+                                grandTotal: calculatedGrandTotal, 
+                                downpayment: downpaymentAmount, 
+                                balance: calculatedBalance
+                            }}
+                            theme={theme}
+                            darkMode={darkMode}
+                        />
+                     </div>
                   </div>
               </div>
           </div>
