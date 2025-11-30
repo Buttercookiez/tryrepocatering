@@ -1,9 +1,6 @@
-import axios from "axios";
+// src/api/api.js
 
-const api = axios.create({
-  baseURL: "http://localhost:5000/api",
-});
+// In Create React App, we use process.env
+const BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
 
-const API_BASE = 'http://localhost:5000/api/kitchen';
-export default api;
-    
+export default BASE_URL;

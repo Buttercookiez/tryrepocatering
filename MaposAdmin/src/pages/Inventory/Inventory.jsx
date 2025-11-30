@@ -9,7 +9,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
 import { InventorySkeleton } from '../../components/SkeletonLoaders';
 
-const API_BASE = 'http://localhost:5000/api/inventory';
+const API_BASE = (process.env.REACT_APP_API_BASE || 'http://localhost:5000') + '/api/inventory';
 
 // --- HELPER: CUSTOM DROPDOWN ---
 const CustomDropdown = ({ options, value, onChange, placeholder, theme }) => {
