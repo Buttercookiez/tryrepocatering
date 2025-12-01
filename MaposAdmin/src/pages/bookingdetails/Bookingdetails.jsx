@@ -166,7 +166,7 @@ useEffect(() => {
 
       // 2. GENERATE LINK
       // FIX: Changed from localhost to production URL
-      const baseUrl = "https://tryrepocatering.vercel.app"; 
+      const baseUrl = "https://tryrepocatering-sfdi.vercel.app"; 
       const contractLink = `${baseUrl}/client-payment/${details.id}`;
       
       setGeneratedLink(contractLink); 
