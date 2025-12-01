@@ -5,11 +5,12 @@ import {
   Download, Filter, Box, ArrowRight, ChevronDown, Edit3, Trash2
 } from 'lucide-react';
 
+// --- IMPORTANT: IMPORT THE CONFIGURED AXIOS INSTANCE ---
+import api from '../../api/api'; 
+
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
 import { InventorySkeleton } from '../../components/SkeletonLoaders';
-
-const API_BASE = (process.env.REACT_APP_API_BASE || 'http://localhost:5000') + '/api/inventory';
 
 // --- HELPER: CUSTOM DROPDOWN ---
 const CustomDropdown = ({ options, value, onChange, placeholder, theme }) => {
@@ -307,21 +308,46 @@ const Inventory = () => {
 
   useEffect(() => { localStorage.setItem('sidebarState', JSON.stringify(sidebarOpen)); }, [sidebarOpen]);
 
+  // --- FIX: Use configured 'api' instead of fetch/hardcoded string ---
   const fetchData = async () => {
       setIsLoading(true);
+      
+      // --- DEBUGGING: LOG THE EXACT URLS ---
+      const inventoryUrl = '/inventory';
+      const allocationsUrl = `/inventory/allocations?date=${todaysDateDisplay}`;
+      
+      // Log the full URL that AXIOS is constructing
+      console.log("--- DEBUG START ---");
+      console.log("BASE URL from api.js:", api.defaults.baseURL); 
+      console.log("TRYING TO FETCH INVENTORY FROM:", api.defaults.baseURL + inventoryUrl);
+      console.log("TRYING TO FETCH ALLOCATIONS FROM:", api.defaults.baseURL + allocationsUrl);
+      console.log("--- DEBUG END ---");
+      
       try {
           const [invRes, evtRes] = await Promise.all([
-              fetch(`${API_BASE}`),
-              fetch(`${API_BASE}/allocations?date=${todaysDateDisplay}`)
+              api.get(inventoryUrl), 
+              api.get(allocationsUrl)
           ]);
           
-          const invData = await invRes.json();
-          const evtData = await evtRes.json();
+          // Axio data is in the .data property
+          const invData = invRes.data;
+          const evtData = evtRes.data;
 
+          console.log("INVENTORY DATA RECEIVED:", invData); // Log the received data
+          console.log("ALLOCATIONS DATA RECEIVED:", evtData); // Log the received data
+          
           setInventory(Array.isArray(invData) ? invData : []);
           setEvents(Array.isArray(evtData) ? evtData : []);
 
-      } catch (err) { console.error(err); } 
+      } catch (err) { 
+          // If the request fails (e.g., 404 or 500), log the error response
+          if (err.response) {
+              console.error("API Error Response Status:", err.response.status);
+              console.error("API Error Response Data:", err.response.data);
+          } else {
+              console.error("Network Error:", err.message);
+          }
+      } 
       finally { setIsLoading(false); }
   };
 
@@ -329,7 +355,7 @@ const Inventory = () => {
 
   const handleSaveItem = async (itemData) => {
       const method = itemToEdit ? 'PUT' : 'POST';
-      const url = itemToEdit ? `${API_BASE}/${itemToEdit.id}` : `${API_BASE}`;
+      const url = itemToEdit ? `/inventory/${itemToEdit.id}` : '/inventory';
       
       if (itemToEdit) {
           setInventory(prev => prev.map(item => item.id === itemToEdit.id ? { ...item, ...itemData } : item));
@@ -342,14 +368,15 @@ const Inventory = () => {
       setTimeout(() => setToast({ show: false }), 4000);
 
       try {
-          const res = await fetch(url, { 
+          // Use the configured API instance
+          await api({
             method: method, 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify(itemData) 
+            url: url,
+            data: itemData 
           });
-          if(!res.ok) console.warn("Backend sync issue");
-          if(!itemToEdit) fetchData();
-      } catch(err) { console.error("Sync Error", err); }
+          // After a POST/PUT, refresh the data (optional but good practice for new items)
+          if(!itemToEdit) fetchData(); 
+      } catch(err) { console.error("Sync Error:", err); }
       
       setItemToEdit(null);
   };
@@ -367,9 +394,10 @@ const Inventory = () => {
       setTimeout(() => setToast({ show: false }), 4000);
 
       try {
-          await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+          // Use the configured API instance
+          await api.delete(`/inventory/${id}`);
       } catch (err) {
-          console.error("Delete failed", err);
+          console.error("Delete failed:", err);
           fetchData();
       }
   };
@@ -388,12 +416,9 @@ const Inventory = () => {
       const newQty = Math.max(0, Number(currentQty) + change);
       setInventory(prev => prev.map(item => item.id === id ? { ...item, quantity: newQty } : item));
       try {
-          await fetch(`${API_BASE}/${id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ quantity: newQty })
-          });
-      } catch (err) { console.error("Update failed"); fetchData(); }
+          // Use the configured API instance
+          await api.put(`/inventory/${id}`, { quantity: newQty });
+      } catch (err) { console.error("Update failed:", err); fetchData(); }
   };
 
   const openAllocationModal = (event) => {
@@ -405,17 +430,17 @@ const Inventory = () => {
       if (!event) return;
       setAllocationModal({ isOpen: false, event: null }); 
       try {
-          const res = await fetch(`${API_BASE}/allocate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ eventId: event.id, guests: event.guests, packageId: event.packageId })
+          // Use the configured API instance
+          await api.post('/inventory/allocate', {
+              eventId: event.id, 
+              guests: event.guests, 
+              packageId: event.packageId
           });
 
-          if (res.ok) {
-              setToast({ show: true, message: `Assets allocated for ${event.client}.` });
-              setTimeout(() => setToast({ ...toast, show: false }), 3000);
-              fetchData(); 
-          }
+          setToast({ show: true, message: `Assets allocated for ${event.client}.` });
+          setTimeout(() => setToast({ ...toast, show: false }), 3000);
+          fetchData(); 
+
       } catch (err) { alert("Allocation Failed"); }
   };
 

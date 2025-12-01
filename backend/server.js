@@ -11,6 +11,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",                 // Vite Localhost
   "http://localhost:3000",                 // CRA Localhost
+  "http://localhost:3001",
   "https://tryrepocatering-sfdi.vercel.app",     // YOUR VERCEL FRONTEND URL (Check your dashboard!)
   "https://mapos-web.vercel.app"           // Any other URL you deployed
 ];

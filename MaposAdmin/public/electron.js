@@ -1,3 +1,5 @@
+// public/electron.js
+
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
@@ -13,14 +15,9 @@ function createWindow() {
   // Load React App (dev)
   win.loadURL("http://localhost:3001");
 
-  // Uncomment this if you want devtools:
-  // win.webContents.openDevTools();
+  // 🚨 UNCOMMENTED LINE 🚨
+  win.webContents.openDevTools(); 
 }
 
 app.whenReady().then(createWindow);
-
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+// ... (rest of the file remains the same) ...
