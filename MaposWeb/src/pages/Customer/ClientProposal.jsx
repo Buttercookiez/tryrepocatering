@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Loader2, Check, Calendar, Users, MapPin, 
-  Utensils, Moon, Sun, ChevronDown, 
-  Plus, CheckCircle, FileText, Download, User, Info
+  ArrowRight, Utensils, Moon, Sun, ChevronDown, 
+  Plus, CheckCircle, ArrowLeft, FileText, Download, User, Info, CreditCard
 } from 'lucide-react';
 
 // --- 1. IMPORT API INSTANCE ---
@@ -66,6 +66,7 @@ const ClientProposal = () => {
 
         // 2. Fetch Packages (Replaced fetch with api.get)
         const menuRes = await api.get('/kitchen/menus');
+        // Axios returns data in .data, no need for .json()
         const menuData = menuRes.data;
         
         const formattedPackages = Object.values(menuData).map((pkg) => ({
