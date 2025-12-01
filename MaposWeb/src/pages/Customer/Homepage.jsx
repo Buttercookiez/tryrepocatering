@@ -468,8 +468,8 @@ const Homepage = () => {
               </p>
               <div className={`flex gap-4 ${theme.subText}`}>
                 <a href="#" className={`hover:${theme.text} transition-colors`}><Instagram className="w-5 h-5" /></a>
-                <a href="#" className={`hover:${theme.text} transition-colors`}><Facebook className="w-5 h-5" /></a>
-                <a href="#" className={`hover:${theme.text} transition-colors`}><Mail className="w-5 h-5" /></a>
+                <a href="https://www.facebook.com/maposcatering" className={`hover:${theme.text} transition-colors`}><Facebook className="w-5 h-5" /></a>
+                <a href="mailto:cateringmapo@gmail.com" className={`hover:${theme.text} transition-colors`}><Mail className="w-5 h-5" /></a>
               </div>
             </FadeIn>
           </div>
