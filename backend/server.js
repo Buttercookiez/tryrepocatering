@@ -6,8 +6,29 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 
-// Middleware
-app.use(cors({ origin: true, credentials: true }));
+// --- 1. CORS CONFIGURATION (The Fix) ---
+// Add all the URLs that are allowed to talk to your backend here
+const allowedOrigins = [
+  "http://localhost:5173",                 // Vite Localhost
+  "http://localhost:3000",                 // CRA Localhost
+  "https://mapos-catering.vercel.app",     // YOUR VERCEL FRONTEND URL (Check your dashboard!)
+  "https://mapos-web.vercel.app"           // Any other URL you deployed
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Electron, or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      // If the URL isn't in the list, block it
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
 
 // JSON Body Parsing (Skip for Webhooks if needed)
 app.use((req, res, next) => {
@@ -22,21 +43,22 @@ app.use((req, res, next) => {
 const inquiryRoute = require("./routes/inquiryRoute");
 const paymongoRoute = require("./routes/paymongoRoute");
 const calendarRoute = require("./routes/calendarRoutes");
-const kitchenRoute = require("./routes/kitchenRoutes"); // <--- ADD THIS
-const inventoryRoute = require("./routes/inventoryRoutes"); // <--- ADD
+const kitchenRoute = require("./routes/kitchenRoutes"); 
+const inventoryRoute = require("./routes/inventoryRoutes"); 
 
 // --- MOUNT ROUTES ---
 app.use("/api/inquiries", inquiryRoute);
 app.use("/api/paymongo", paymongoRoute);
 app.use("/api/calendar", calendarRoute);
-app.use("/api/kitchen", kitchenRoute); // <--- ADD THIS
-app.use("/api/inventory", inventoryRoute); // <--- ADD
+app.use("/api/kitchen", kitchenRoute);
+app.use("/api/inventory", inventoryRoute);
 
 // Test Route
 app.get("/", (req, res) => {
   res.send("Server is Running! 🚀");
 });
 
+// --- 2. SERVER STARTUP (Fixed) ---
 // Only listen on port if running locally (Development)
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
@@ -47,9 +69,3 @@ if (process.env.NODE_ENV !== 'production') {
 
 // REQUIRED FOR VERCEL DEPLOYMENT
 module.exports = app;
-
-const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`   Kitchen API:     http://localhost:${PORT}/api/kitchen/inventory`);
-});
