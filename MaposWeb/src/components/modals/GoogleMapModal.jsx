@@ -2,16 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, MapPin, Loader2, Check, MousePointerClick, Navigation } from 'lucide-react';
 import L from 'leaflet'; 
 
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+// --- FIX FOR BROKEN MARKER ICONS (Use CDN instead of local imports) ---
+delete L.Icon.Default.prototype._getIconUrl;
 
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
-L.Marker.prototype.options.icon = DefaultIcon;
 
 const GoogleMapModal = ({ isOpen, onClose, onSelect, darkMode }) => {
   // ✅ YOUR API KEY
@@ -25,7 +23,7 @@ const GoogleMapModal = ({ isOpen, onClose, onSelect, darkMode }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
-  const observerRef = useRef(null); // ✅ New Ref to track the observer
+  const observerRef = useRef(null); 
   const searchRequestId = useRef(0);
 
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -82,9 +80,7 @@ const GoogleMapModal = ({ isOpen, onClose, onSelect, darkMode }) => {
         });
 
         // 3. SAFE RESIZE OBSERVER
-        // We assign it to a ref so we can disconnect it in the cleanup function
         observerRef.current = new ResizeObserver(() => {
-            // Only invalidate if map instance AND container still exist
             if (mapInstanceRef.current && mapInstanceRef.current._container) {
                 mapInstanceRef.current.invalidateSize();
             }
@@ -97,21 +93,18 @@ const GoogleMapModal = ({ isOpen, onClose, onSelect, darkMode }) => {
     return () => {
       clearTimeout(timer);
       
-      // A. Kill the observer first
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
       }
 
-      // B. Kill the map
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.off(); // Remove all event listeners
-        mapInstanceRef.current.remove(); // Destroy map
+        mapInstanceRef.current.off(); 
+        mapInstanceRef.current.remove(); 
         mapInstanceRef.current = null;
         markerRef.current = null;
       }
 
-      // C. Remove CSS
       if (document.head.contains(link)) document.head.removeChild(link);
     };
   }, [isOpen]);
