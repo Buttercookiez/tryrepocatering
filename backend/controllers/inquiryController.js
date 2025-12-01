@@ -161,7 +161,8 @@ const getBooking = async (req, res) => {
 // --- 4. SEND INITIAL PROPOSAL EMAIL ---
 const sendProposalEmail = async (req, res) => {
     const { clientEmail, clientName, refId, totalCost, breakdown, details } = req.body;
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; 
+    // Hardcode your production URL here
+    const FRONTEND_URL = "https://tryrepocatering.vercel.app";
     const viewLink = `${FRONTEND_URL}/client-proposal/${refId}`;
 
     try {
