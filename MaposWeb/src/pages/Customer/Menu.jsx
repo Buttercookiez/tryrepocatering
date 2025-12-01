@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Download, Leaf, Wheat, Star, ArrowUp 
+  Download, Leaf, Wheat, ArrowUp, Utensils 
 } from 'lucide-react';
 import Navbar from '../../components/customer/Navbar';
 import Footer from '../../components/customer/Footer';
@@ -84,7 +84,6 @@ const Menu = () => {
   // --- 1. NATIVE SCROLL HANDLER (Fixes Mobile Navbar) ---
   const handleNativeScroll = (e) => {
     const scrollTop = e.currentTarget.scrollTop;
-    // If we scroll down more than 50px on mobile, turn navbar solid
     setNavIsScrolled(scrollTop > 50);
   };
 
@@ -210,14 +209,15 @@ const Menu = () => {
 
   const categories = ["All", "Appetizers", "Entrées", "Sides", "Desserts", "Cocktails"];
   
+  // --- UPDATED MENU ITEMS (More Professional & Appetizing) ---
   const menuItems = [
-    { id: 1, category: "Appetizers", name: "Truffle Arancini", description: "Wild mushroom risotto, white truffle oil, parmesan crisp.", tags: ["v"], price: "Start" },
-    { id: 2, category: "Appetizers", name: "Hokkaido Scallop Crudo", description: "Yuzu vinaigrette, shaved radish, micro cilantro, chili oil.", tags: ["gf"], price: "Cold" },
-    { id: 3, category: "Entrées", name: "24-Hour Short Rib", description: "Braised angus beef, pomme purée, glazed heirloom carrots, red wine reduction.", tags: ["gf"], price: "Sig" },
-    { id: 4, category: "Entrées", name: "Miso Glazed Black Cod", description: "Sustainably sourced cod, bok choy, ginger dashi broth.", tags: ["pesc"], price: "Sea" },
-    { id: 5, category: "Entrées", name: "Wild Mushroom Wellington", description: "Portobello, spinach, chestnut farce, puff pastry, thyme jus.", tags: ["v", "vg"], price: "Earth" },
-    { id: 6, category: "Desserts", name: "Dark Chocolate Ganache", description: "70% Valrhona chocolate, sea salt, raspberry coulis, gold leaf.", tags: ["v"], price: "Sweet" },
-    { id: 7, category: "Cocktails", name: "The Gilded Old Fashioned", description: "Japanese whisky, smoked maple syrup, angostura, orange peel.", tags: [], price: "Bar" },
+    { id: 1, category: "Appetizers", name: "Truffle Mushroom Tartlet", description: "Wild forest mushrooms, white truffle cream, thyme, puff pastry.", tags: ["v"], price: "Start" },
+    { id: 2, category: "Appetizers", name: "Seared Scallop & Pea Purée", description: "Hokkaido scallops, mint-infused pea cream, crispy prosciutto, chili oil.", tags: ["gf"], price: "Sea" },
+    { id: 3, category: "Entrées", name: "Slow-Braised Angus Beef", description: "24-hour braised short rib, pomme purée, glazed heirloom carrots, red wine jus.", tags: ["gf"], price: "Land" },
+    { id: 4, category: "Entrées", name: "Miso Glazed Black Cod", description: "Sustainably sourced cod, baby bok choy, ginger dashi broth, sesame crisp.", tags: ["pesc"], price: "Ocean" },
+    { id: 5, category: "Entrées", name: "Wild Mushroom Risotto", description: "Arborio rice, porcini dust, spinach, parmesan crisp, truffle oil.", tags: ["v", "gf"], price: "Earth" },
+    { id: 6, category: "Desserts", name: "Dark Chocolate Mousse", description: "70% Valrhona chocolate, sea salt, raspberry coulis, gold leaf.", tags: ["v"], price: "Sweet" },
+    { id: 7, category: "Cocktails", name: "The Mapo Signature", description: "Japanese whisky, smoked maple syrup, angostura bitters, orange peel.", tags: [], price: "Bar" },
     { id: 8, category: "Sides", name: "Charred Broccolini", description: "Garlic confit, lemon zest, toasted almonds.", tags: ["vg", "gf"], price: "Side" }
   ];
 
@@ -226,7 +226,7 @@ const Menu = () => {
   return (
     <div 
       ref={containerRef}
-      onScroll={handleNativeScroll} // Detect mobile scroll for Navbar
+      onScroll={handleNativeScroll}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className={`h-screen w-full font-sans antialiased transition-colors duration-500 ${theme.bg} ${theme.text} selection:bg-[#C9A25D] selection:text-white overflow-y-scroll md:overflow-hidden`}
@@ -239,7 +239,7 @@ const Menu = () => {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* Navbar Logic: Turns black if slide > 0 OR mobile scroll > 50px */}
+      {/* Navbar Logic */}
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} isScrolled={activeIndex > 0 || navIsScrolled} />
 
       {/* --- Slide 0: Hero --- */}
@@ -260,7 +260,7 @@ const Menu = () => {
         </div>
       </header>
 
-      {/* --- Slide 1: Menu (Flicker-Free) --- */}
+      {/* --- Slide 1: Menu --- */}
       <section ref={addToRefs} className={`h-screen flex flex-col pt-24 pb-0 ${theme.bg} transition-colors duration-500`}>
         
         {/* FIXED HEADER */}
@@ -303,17 +303,20 @@ const Menu = () => {
         </div>
       </section>
 
-      {/* --- Slide 2: Seasonal --- */}
+      {/* --- Slide 2: REPLACED SECTION (Farm to Table) --- */}
       <section ref={addToRefs} className="relative h-screen bg-fixed bg-center bg-cover flex items-center justify-center" style={{ backgroundImage: "url('https://images.pexels.com/photos/5638268/pexels-photo-5638268.jpeg?auto=compress&cs=tinysrgb&w=1600')" }}>
         <div className="absolute inset-0 bg-black/60"></div>
         <div className="relative z-10 max-w-screen-md mx-auto px-6 text-center text-white">
             <FadeIn>
-                <Star className="w-8 h-8 text-[#C9A25D] mx-auto mb-6" />
-                <h2 className="font-serif text-4xl md:text-6xl mb-6">Chef's Table Experience</h2>
+                {/* Replaced Star with Leaf/Utensils context */}
+                <Utensils className="w-8 h-8 text-[#C9A25D] mx-auto mb-6" />
+                <h2 className="font-serif text-4xl md:text-6xl mb-6">Farm to Table Philosophy</h2>
                 <p className="font-light text-lg md:text-xl text-white/90 mb-10 leading-relaxed">
-                    An intimate 7-course tasting menu featuring rare ingredients and wine pairings.
+                    We believe extraordinary dishes begin with extraordinary ingredients. Sourcing locally from trusted farmers to ensure freshness and sustainability in every bite.
                 </p>
-                <button onClick={() => navigate('/booking')} className="bg-[#C9A25D] text-white px-10 py-4 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-stone-900 transition-all duration-300">Inquire Availability</button>
+                <button onClick={() => navigate('/booking')} className="bg-[#C9A25D] text-white px-10 py-4 text-xs tracking-[0.2em] uppercase hover:bg-white hover:text-stone-900 transition-all duration-300">
+                    Book a Tasting
+                </button>
             </FadeIn>
         </div>
       </section>

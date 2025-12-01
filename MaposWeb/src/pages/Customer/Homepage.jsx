@@ -252,7 +252,7 @@ const Homepage = () => {
         <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-4xl mx-auto mt-0 md:-mt-10">
           <FadeIn>
             <span className="text-[#C9A25D] text-xs md:text-sm tracking-[0.3em] uppercase font-medium mb-6 block">
-              Est. 2015
+              Est. 2004
             </span>
             <h1 className="font-serif text-5xl md:text-8xl lg:text-9xl text-white leading-none mb-8 font-thin drop-shadow-2xl">
               The Art of <br/> <span className="italic">Dining</span>
@@ -297,19 +297,19 @@ const Homepage = () => {
         className={`min-h-screen md:h-screen flex flex-col justify-center py-20 ${theme.bg} transition-colors duration-500`}
       >
         <div className="max-w-screen-lg mx-auto px-6 text-center">
-          <FadeIn>
-            <h2 className={`font-serif text-3xl md:text-5xl ${theme.text} mb-8 leading-tight`}>
-              "We believe that food is not just eaten,<br/>
-              <span className={`${theme.subText} italic`}>it is experienced."</span>
-            </h2>
-            <div className="w-[1px] h-20 bg-[#C9A25D] mx-auto mb-8"></div>
-            <p className={`${theme.subText} font-light text-lg leading-relaxed max-w-2xl mx-auto`}>
-              Mapo's brings a symphony of flavors to your most cherished moments. 
-              Rejecting the ordinary, we source exclusively from local artisans to craft 
-              menus that are as sustainable as they are exquisite.
-            </p>
-          </FadeIn>
-        </div>
+  <FadeIn>
+    <h2 className={`font-serif text-3xl md:text-5xl ${theme.text} mb-8 leading-tight`}>
+      "Success is not just about the food,<br/>
+      <span className={`${theme.subText} italic`}>it is about integrity and heart."</span>
+    </h2>
+    <div className="w-[1px] h-20 bg-[#C9A25D] mx-auto mb-8"></div>
+    <p className={`${theme.subText} font-light text-lg leading-relaxed max-w-2xl mx-auto`}>
+      Established in 2004, Mapos Catering was born from a mother's dream and unwavering resilience. 
+      We believe in honest service, treating every client like family and ensuring that every dish 
+      served is a testament to our hard work and dedication.
+    </p>
+  </FadeIn>
+</div>
       </section>
 
       {/* --- 2. Process (Min Height + Fixed Grid Stacking) --- */}
@@ -366,9 +366,9 @@ const Homepage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
             {[
-              { title: "The Gala", img: "https://images.pexels.com/photos/2544829/pexels-photo-2544829.jpeg?auto=compress&cs=tinysrgb&w=800", sub: "Plated Dinners" },
-              { title: "Al Fresco", img: "https://images.pexels.com/photos/5638268/pexels-photo-5638268.jpeg?auto=compress&cs=tinysrgb&w=800", sub: "Open Air Events" },
-              { title: "Corporate", img: "https://images.pexels.com/photos/2893685/pexels-photo-2893685.jpeg?auto=compress&cs=tinysrgb&w=800", sub: "Professional & Boxed" }
+              { title: "The Classic", img: "/images/mapo3.png", sub: "Buffet Favorites" },
+              { title: "The Executive", img: "/images/mapo4.png", sub: "Premium Dining" },
+              { title: "Event Styling", img: "/images/mapo5.png", sub: "Decor & Ambiance" }
             ].map((item, idx) => (
               <FadeIn key={idx} delay={idx * 150}>
                 <div className="group cursor-pointer" onClick={() => navigate('/menu')}>
@@ -399,10 +399,10 @@ const Homepage = () => {
       >
         <div className="flex flex-wrap md:flex-nowrap h-full w-full">
           {[
-            "https://images.pexels.com/photos/3026808/pexels-photo-3026808.jpeg?auto=compress&cs=tinysrgb&w=800",
-            "https://images.pexels.com/photos/3217156/pexels-photo-3217156.jpeg?auto=compress&cs=tinysrgb&w=800",
-            "https://images.pexels.com/photos/4552130/pexels-photo-4552130.jpeg?auto=compress&cs=tinysrgb&w=800",
-            "https://images.pexels.com/photos/4253320/pexels-photo-4253320.jpeg?auto=compress&cs=tinysrgb&w=800"
+            "/images/mapo1.png",
+            "/images/mapo2.png",
+            "/images/mapo6.png",
+            "/images/mapo7.png"
           ].map((src, i) => (
             <div 
               key={i} 
@@ -432,7 +432,7 @@ const Homepage = () => {
           
           <div className={`divide-y ${darkMode ? 'divide-stone-800' : 'divide-stone-100'}`}>
             {[
-              { q: "What is the booking lead time?", a: "We recommend securing your date 6-12 months in advance, especially for weekends during peak season." },
+              { q: "What is the booking lead time?", a: "We recommend securing your date 1-2 months in advance, especially for weekends during peak season." },
               { q: "Do you handle dietary restrictions?", a: "Our culinary team is well-versed in gluten-free, vegan, and allergen-sensitive preparations without compromising on flavor." },
               { q: "Is staff included?", a: "Yes, our white-glove service team manages setup, service, and breakdown to ensure a seamless experience." }
             ].map((item, idx) => (
