@@ -6,14 +6,13 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 
-// --- 1. CORS CONFIGURATION (The Fix) ---
-// Add all the URLs that are allowed to talk to your backend here
+// --- 1. CORS CONFIGURATION (FIXED) ---
 const allowedOrigins = [
-  "http://localhost:5173",                 // Vite Localhost
-  "http://localhost:3000",                 // CRA Localhost
+  "http://localhost:5173",                 
+  "http://localhost:3000",                 
   "http://localhost:3001",
-  "https://tryrepocatering-sfdi.vercel.app",     // YOUR VERCEL FRONTEND URL (Check your dashboard!)
-  "https://tryrepocatering.vercel.app/"           // Any other URL you deployed
+  "https://tryrepocatering-sfdi.vercel.app",
+  "https://tryrepocatering.vercel.app" // REMOVED trailing slash (Crucial!)
 ];
 
 app.use(cors({
@@ -22,16 +21,16 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
-      // If the URL isn't in the list, block it
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
     }
     return callback(null, true);
   },
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
 }));
 
-// JSON Body Parsing (Skip for Webhooks if needed)
+// JSON Body Parsing
 app.use((req, res, next) => {
   if (req.originalUrl.includes('/webhook')) {
     next();
@@ -59,8 +58,7 @@ app.get("/", (req, res) => {
   res.send("Server is Running! 🚀");
 });
 
-// --- 2. SERVER STARTUP (Fixed) ---
-// Only listen on port if running locally (Development)
+// --- 2. SERVER STARTUP ---
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
@@ -68,5 +66,5 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// REQUIRED FOR VERCEL DEPLOYMENT
+// REQUIRED FOR VERCEL
 module.exports = app;
