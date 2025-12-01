@@ -13,7 +13,7 @@ const allowedOrigins = [
   "http://localhost:3000",                 // CRA Localhost
   "http://localhost:3001",
   "https://tryrepocatering-sfdi.vercel.app",     // YOUR VERCEL FRONTEND URL (Check your dashboard!)
-  "https://mapos-web.vercel.app"           // Any other URL you deployed
+  "https://tryrepocatering.vercel.app/"           // Any other URL you deployed
 ];
 
 app.use(cors({
