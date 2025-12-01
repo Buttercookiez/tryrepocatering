@@ -422,3 +422,5 @@ module.exports = {
     declineInquiry,
     acceptProposal
 };
+
+// Fixed URL for Vercel deployment
