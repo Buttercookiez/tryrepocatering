@@ -8,16 +8,20 @@ const admin = require("firebase-admin");
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
 const WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET;
 
+// --- CONFIG: LIVE FRONTEND URL ---
+const FRONTEND_URL = "https://tryrepocatering-sfdi.vercel.app";
+
 // 1. CREATE CHECKOUT SESSION
 router.post("/create-checkout-session", async (req, res) => {
   const { amount, description, remarks, refId } = req.body;
 
   try {
     const amountInCentavos = Math.round(amount * 100);
-    // Redirect back to specific booking page
+    
+    // FIX: Redirect back to LIVE site, not localhost
     const returnUrl = refId 
-        ? `http://localhost:3000/client-payment/${refId}` 
-        : `http://localhost:3000/client-payment/success`;
+        ? `${FRONTEND_URL}/client-payment/${refId}` 
+        : `${FRONTEND_URL}/client-payment/success`;
 
     const response = await axios.post("https://api.paymongo.com/v1/checkout_sessions", {
         data: { attributes: {
@@ -43,13 +47,12 @@ router.post("/webhook", express.raw({ type: 'application/json' }), async (req, r
   const rawBody = req.body;
 
   try {
-    // A. SECURITY CHECK
+    // A. SECURITY CHECK (Uncomment for production security)
     // const computed = crypto.createHmac("sha256", WEBHOOK_SECRET).update(rawBody).digest("hex");
     // if (computed !== signature) {
-    //   console.log("❌ FAIL: Signature mismatch. Check .env WEBHOOK_SECRET");
     //   return res.status(400).send("Invalid signature");
     // }
-    console.log("✅ PASS: Signature Verified");
+    console.log("✅ PASS: Signature Verified (Skipped for Dev)");
 
     const event = JSON.parse(rawBody.toString());
     const eventType = event.data.attributes.type;

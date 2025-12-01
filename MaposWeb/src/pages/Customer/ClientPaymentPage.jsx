@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // ✅ Added Axios for Real API Calls
 import { 
     ShieldCheck, CreditCard, Calendar, Users, ArrowRight, CheckCircle, 
     Download, Loader2, Lock, MapPin, Check, AlertCircle, Smartphone 
 } from 'lucide-react';
 
-// Use the existing service for fetching booking details
+// --- IMPORT YOUR CONFIGURED API ---
+import api from '../../api/api'; 
 import { getBookingByRefId } from '../../api/bookingService'; 
 
 // --- 1. UI ANIMATION WRAPPER ---
@@ -60,12 +60,10 @@ const ClientPaymentPage = () => {
     const [gatewayStep, setGatewayStep] = useState(""); 
     
     // User Selections
-    const [paymentType, setPaymentType] = useState("downpayment"); // 'downpayment' | 'full'
-    const [paymentMethod, setPaymentMethod] = useState(null); // 'card' | 'wallet'
+    const [paymentType, setPaymentType] = useState("downpayment"); 
+    const [paymentMethod, setPaymentMethod] = useState(null); 
 
-    // ===========================================
     // --- 1. FETCH BOOKING DATA ---
-    // ===========================================
     useEffect(() => {
         const loadInvoice = async () => {
             if(!bookingId) {
@@ -112,17 +110,13 @@ const ClientPaymentPage = () => {
         loadInvoice();
     }, [bookingId]);
 
-    // ===========================================
     // --- 2. CALCULATE AMOUNT ---
-    // ===========================================
     const getPayableAmount = () => {
         if(!bookingData) return 0;
         return paymentType === 'downpayment' ? bookingData.grandTotal * 0.5 : bookingData.grandTotal;
     };
 
-    // ===========================================
-    // --- 3. PAYMONGO INTEGRATION (REAL LOGIC) ---
-    // ===========================================
+    // --- 3. PAYMONGO INTEGRATION (FIXED) ---
     const handlePayment = async () => {
         if(!paymentMethod) return alert("Please select a payment method.");
 
@@ -131,35 +125,25 @@ const ClientPaymentPage = () => {
 
         const amountInPhp = getPayableAmount();
         
-        // PayMongo expects amount in CENTAVOS (e.g., 100 PHP = 10000 centavos)
-        // Make sure your backend expects centavos or adjust this line accordingly
-        
+        try {
+            console.log("💳 Initiating PayMongo Session:", {
+                amount: amountInPhp, 
+                desc: `Payment for ${bookingData.refId}`
+            });
 
-       try {
-    // ... animation delays ...
-
-    console.log("💳 Initiating PayMongo Session:", {
-        amount: amountInPhp, // Send the exact PHP amount (e.g. 5000)
-        desc: `Payment for ${bookingData.refId}`
-    });
-
-    // ✅ UPDATE AXIOS CALL
-    const response = await axios.post(
-        "http://localhost:5000/api/paymongo/create-checkout-session", 
-        {
-            amount: amountInPhp, // <--- SEND RAW PHP AMOUNT
-            description: `${paymentType === 'downpayment' ? '50% Downpayment' : 'Full Payment'} - Ref: ${bookingData.refId}`,
-            remarks: `Client: ${bookingData.clientName}`
-            
-        }
-    );
+            // FIX: Replaced axios with api instance, removed localhost
+            const response = await api.post("/paymongo/create-checkout-session", {
+                amount: amountInPhp, 
+                description: `${paymentType === 'downpayment' ? '50% Downpayment' : 'Full Payment'} - Ref: ${bookingData.refId}`,
+                remarks: `Client: ${bookingData.clientName}`,
+                refId: bookingData.refId // Send ID so backend can build return URL
+            });
 
             const { checkout_url } = response.data;
             
             if (checkout_url) {
                 setGatewayStep("Redirecting to Payment Page...");
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                // ✅ Redirect user to PayMongo
                 window.location.href = checkout_url;
             } else {
                 throw new Error("No checkout URL returned");
@@ -172,15 +156,11 @@ const ClientPaymentPage = () => {
         }
     };
 
-    // ===========================================
-    // --- UI HELPERS ---
-    // ===========================================
     const GlobalStyles = () => (
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap');
           .font-serif { font-family: 'Cormorant Garamond', serif; }
           .font-sans { font-family: 'Inter', sans-serif; }
-          /* Fix for the flickering text issue */
           body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         `}</style>
     );
@@ -247,11 +227,10 @@ const ClientPaymentPage = () => {
             
             <div className="w-full max-w-6xl bg-white shadow-2xl flex flex-col lg:flex-row overflow-hidden min-h-[700px] rounded-sm">
                 
-                {/* --- LEFT: INVOICE DETAILS (Dark Luxury Theme) --- */}
+                {/* --- LEFT: INVOICE DETAILS --- */}
                 <div className="lg:w-5/12 bg-[#1c1c1c] text-white p-10 md:p-14 relative flex flex-col justify-between">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
                     
-                    {/* Header */}
                     <FadeIn delay={0}>
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-8 opacity-80">
@@ -265,7 +244,6 @@ const ClientPaymentPage = () => {
                         </div>
                     </FadeIn>
 
-                    {/* Details Grid */}
                     <FadeIn delay={200}>
                         <div className="space-y-8 relative z-10 my-12">
                             <div className="flex gap-4">
@@ -298,7 +276,6 @@ const ClientPaymentPage = () => {
                         </div>
                     </FadeIn>
 
-                    {/* Footer Total */}
                     <FadeIn delay={400}>
                         <div className="pt-8 border-t border-stone-800 relative z-10">
                             <p className="text-[10px] uppercase text-stone-500 tracking-widest mb-2">Total Contract Value</p>
@@ -307,10 +284,9 @@ const ClientPaymentPage = () => {
                     </FadeIn>
                 </div>
 
-                {/* --- RIGHT: PAYMENT ACTION (Light Clean Theme) --- */}
+                {/* --- RIGHT: PAYMENT ACTION --- */}
                 <div className="lg:w-7/12 bg-white p-10 md:p-14 relative flex flex-col justify-center">
                     
-                    {/* Processing Overlay */}
                     {paymentStatus === "processing" && (
                          <div className="absolute inset-0 bg-white/95 z-20 flex flex-col items-center justify-center animate-in fade-in">
                              <Loader2 size={40} className="text-[#C9A25D] animate-spin mb-4"/>
@@ -326,12 +302,10 @@ const ClientPaymentPage = () => {
                         </div>
                     </FadeIn>
 
-                    {/* 1. Payment Type Selector */}
                     <FadeIn delay={400}>
                         <p className="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold mb-4">Select Amount</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
                              
-                             {/* OPTION: DOWNPAYMENT */}
                              <div 
                                 onClick={() => setPaymentType('downpayment')}
                                 className={`cursor-pointer p-5 border transition-all duration-300 group relative ${
@@ -348,7 +322,6 @@ const ClientPaymentPage = () => {
                                  <p className="text-[10px] text-stone-400 mt-2 font-light">50% Reservation Fee</p>
                              </div>
 
-                             {/* OPTION: FULL PAYMENT */}
                              <div 
                                 onClick={() => setPaymentType('full')}
                                 className={`cursor-pointer p-5 border transition-all duration-300 group relative ${
@@ -367,7 +340,6 @@ const ClientPaymentPage = () => {
                         </div>
                     </FadeIn>
 
-                    {/* 2. Payment Method Selector */}
                     <FadeIn delay={500}>
                         <p className="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-bold mb-4">Payment Method</p>
                         <div className="grid grid-cols-2 gap-4 mb-10">
@@ -397,7 +369,6 @@ const ClientPaymentPage = () => {
                         </div>
                     </FadeIn>
 
-                    {/* 3. Action Button */}
                     <FadeIn delay={600}>
                         <div className="flex items-center justify-between mb-6">
                             <span className="text-stone-400 text-xs font-serif italic">Total Due Now</span>
