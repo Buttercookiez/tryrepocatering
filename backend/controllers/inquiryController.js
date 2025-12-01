@@ -162,8 +162,8 @@ const getBooking = async (req, res) => {
 const sendProposalEmail = async (req, res) => {
     const { clientEmail, clientName, refId, totalCost, breakdown, details } = req.body;
     
-    // --- FIX IS HERE: HARDCODED LIVE URL ---
-    const FRONTEND_URL = "https://tryrepocatering.vercel.app"; 
+    // Ensure this is your React Website URL, NOT the Backend URL
+const FRONTEND_URL = "https://tryrepocatering-sfdi.vercel.app";
     const viewLink = `${FRONTEND_URL}/client-proposal/${refId}`;
 
     try {
