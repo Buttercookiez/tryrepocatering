@@ -45,7 +45,6 @@ const BookingDetails = ({
   const [downpaymentAmount, setDownpaymentAmount] = useState(0); 
   const [paymentTerms, setPaymentTerms] = useState("50% Downpayment due immediately. Remaining balance due 1 week before event.");
   
-  // ✅ FIX: Added missing state variable
   const [generatedLink, setGeneratedLink] = useState(null); 
 
   const [clientAcceptedOverride, setClientAcceptedOverride] = useState(false);
@@ -73,41 +72,29 @@ const BookingDetails = ({
     fetchBookingDetails();
   }, [booking]);
 
-// BookingDetails.jsx
-
 // 2. Proposal Calculation
 useEffect(() => {
   if (bookingData) {
       const proposalData = bookingData.proposal || {};
       
-      // --- NEW LOGIC START ---
       let currentTotal = 0;
 
       if (proposalData.isApproved && proposalData.finalAgreedAmount) {
-          // 1. If Client Accepted, use the FROZEN amount
           currentTotal = proposalData.finalAgreedAmount;
-          // Reverse calculate price per head for display purposes
-          // Note: grandTotal usually includes service charge, so we strip it for the "Price Per Head" input
-          const baseTotal = currentTotal / 1.1; // Removing 10% service charge estimate
+          const baseTotal = currentTotal / 1.1; 
           setPricePerHead(baseTotal / (bookingData.estimatedGuests || 1));
       } else {
-          // 2. If Draft, use the Draft calculations
           const existingTotal = proposalData.costBreakdown?.grandTotal;
           const estimated = bookingData.estimatedBudget;
           currentTotal = existingTotal || estimated || 0;
           setPricePerHead(currentTotal / (bookingData.estimatedGuests || 1));
       }
-      // --- NEW LOGIC END ---
 
       setProposalTotal(currentTotal);
       
-      // Calculate Downpayment
       if (bookingData.payment?.downpayment) {
           setDownpaymentAmount(bookingData.payment.downpayment);
       } else {
-          // Default 50%
-          // If already approved, currentTotal includes SC. If draft, we usually add SC later.
-          // To be safe, let's assume currentTotal is the basis.
           const grandTotal = proposalData.isApproved ? currentTotal : (currentTotal * 1.1);
           setDownpaymentAmount(grandTotal * 0.5);
       }
@@ -177,11 +164,11 @@ useEffect(() => {
       const grandTotal = proposalTotal * 1.1;
       const balance = grandTotal - downpaymentAmount;
 
-      // 2. GENERATE LINK (Forcing localhost:3000)
-      const baseUrl = "http://localhost:3000"; 
+      // 2. GENERATE LINK
+      // FIX: Changed from localhost to production URL
+      const baseUrl = "https://tryrepocatering.vercel.app"; 
       const contractLink = `${baseUrl}/client-payment/${details.id}`;
       
-      // Update state so the UI shows the link
       setGeneratedLink(contractLink); 
 
       // 3. Generate HTML Body
@@ -255,7 +242,6 @@ useEffect(() => {
 
   if (!booking && !bookingData) return <div className={`flex-1 h-full flex items-center justify-center ${theme.bg}`}><Loader2 className="animate-spin text-[#C9A25D]" size={30} /></div>;
 
- // NEW CODE:
   if (isLoading || (!booking && !bookingData)) {
     return (
       <div className={`flex-1 h-full ${theme.bg}`}>
@@ -285,11 +271,9 @@ useEffect(() => {
     status: currentData.status || "Pending",
     budget: currentData.estimatedBudget || 0,
     reservationFee: paymentData.reservationFee || 5000,
-    // REPLACE WITH THIS:
-downpayment: paymentData.downpayment || 0,
-balance: paymentData.balance || currentData.estimatedBudget || 0,
-// Check paymentStatus strictly. If it's "Payment Pending" or "Unpaid", show that.
-downpaymentStatus: paymentData.paymentStatus === "Paid" ? "Paid" : (paymentData.paymentStatus || "Unpaid"),
+    downpayment: paymentData.downpayment || 0,
+    balance: paymentData.balance || currentData.estimatedBudget || 0,
+    downpaymentStatus: paymentData.paymentStatus === "Paid" ? "Paid" : (paymentData.paymentStatus || "Unpaid"),
     timeline: notesData.timeline || [{ date: "N/A", user: "System", action: "No activity." }],
   };
 

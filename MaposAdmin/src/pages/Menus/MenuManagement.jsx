@@ -3,12 +3,13 @@ import {
   Edit3, Save, Utensils, LayoutGrid, ChevronDown, Plus, Trash2, Check, X 
 } from 'lucide-react';
 
+// --- IMPORT API INSTANCE ---
+import api from '../../api/api'; 
+
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
 
-const API_BASE = 'http://localhost:5000/api/kitchen';
-
-// --- 1. SUCCESS TOAST COMPONENT (THEME ALIGNED) ---
+// --- 1. SUCCESS TOAST COMPONENT ---
 const SuccessToast = ({ message, show, onClose }) => {
     if (!show) return null;
     return (
@@ -59,12 +60,14 @@ const MenuManagement = () => {
 
   useEffect(() => { localStorage.setItem('sidebarState', JSON.stringify(sidebarOpen)); }, [sidebarOpen]);
 
-  // --- FETCH ---
+  // --- FETCH (UPDATED) ---
   const fetchPackages = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/menus`);
-      const data = await res.json();
+      // FIX: Use api.get
+      const res = await api.get('/kitchen/menus');
+      const data = res.data;
+      
       const pkgArray = Array.isArray(data) ? data : Object.values(data);
       pkgArray.sort((a, b) => a.price - b.price);
       setPackages(pkgArray); 
@@ -74,7 +77,7 @@ const MenuManagement = () => {
 
   useEffect(() => { fetchPackages(); }, []);
 
-  // --- SAVE ---
+  // --- SAVE (UPDATED) ---
   const handleSave = async () => {
     if (!editingPkg || !editingPkg.id) {
         setToast({ show: true, message: "Error: Missing Package ID." });
@@ -82,13 +85,8 @@ const MenuManagement = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/menus/${editingPkg.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingPkg)
-      });
-
-      if (!res.ok) throw new Error("Failed to update");
+      // FIX: Use api.put
+      await api.put(`/kitchen/menus/${editingPkg.id}`, editingPkg);
 
       setToast({ show: true, message: "Package updated successfully!" });
       setTimeout(() => setToast({ show: false, message: "" }), 3000);
@@ -176,7 +174,6 @@ const MenuManagement = () => {
                         <p className="text-[10px] uppercase tracking-widest text-stone-500">Update details for {editingPkg.name}</p>
                     </div>
                     <div className="flex gap-3">
-                        {/* FIX: CANCEL BUTTON VISIBILITY */}
                         <button 
                             onClick={() => setEditingPkg(null)} 
                             className="px-6 py-2 text-xs uppercase tracking-widest border rounded-sm transition-colors border-stone-300 text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:border-stone-600 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white"

@@ -6,11 +6,12 @@ import {
   Clock, X, ChevronDown, Layers, Check
 } from 'lucide-react';
 
+// --- IMPORT YOUR API INSTANCE ---
+import api from '../../api/api'; 
+
 import Sidebar from '../../components/layout/Sidebar';
 import DashboardNavbar from '../../components/layout/Navbar';
 import { KitchenSkeleton } from '../../components/SkeletonLoaders';
-
-const API_BASE = 'http://localhost:5000/api/kitchen';
 
 // --- HELPER COMPONENTS ---
 const FadeIn = ({ children, delay = 0 }) => {
@@ -110,10 +111,8 @@ const Kitchen = () => {
   const [ingredients, setIngredients] = useState([]);
   const [todaysPackages, setTodaysPackages] = useState([]);
   
-  // --- NEW: STATE FOR DYNAMIC MENUS ---
   const [packageMenus, setPackageMenus] = useState({}); 
 
-  // --- DYNAMIC DATE GENERATION ---
   const getTodayString = () => {
     const date = new Date();
     const year = date.getFullYear();
@@ -123,35 +122,37 @@ const Kitchen = () => {
   };
   const todaysDateDisplay = getTodayString(); 
 
-  // --- FETCH INVENTORY ---
+  // --- 1. FETCH INVENTORY ---
   const fetchInventory = async () => {
       try {
-          const res = await fetch(`${API_BASE}/inventory`);
-          const data = await res.json();
+          // FIX: Use api.get
+          const res = await api.get('/kitchen/inventory');
+          const data = res.data;
           if (Array.isArray(data)) setIngredients(data);
           else setIngredients([]);
       } catch (err) { console.error("Inventory Error:", err); setIngredients([]); } 
   };
 
-  // --- FETCH MENUS (FROM DB) ---
+  // --- 2. FETCH MENUS ---
   const fetchMenus = async () => {
       try {
-          const res = await fetch(`${API_BASE}/menus`);
-          const data = await res.json();
-          setPackageMenus(data);
+          // FIX: Use api.get
+          const res = await api.get('/kitchen/menus');
+          setPackageMenus(res.data);
       } catch (err) { console.error("Menu Error:", err); }
   };
 
-  // --- FETCH ORDERS ---
+  // --- 3. FETCH ORDERS ---
   const fetchOrders = async () => {
       try {
-          const res = await fetch(`${API_BASE}/orders?date=${todaysDateDisplay}`);
-          const data = await res.json();
-          setTodaysPackages(data);
+          // FIX: Use api.get with params
+          const res = await api.get('/kitchen/orders', {
+             params: { date: todaysDateDisplay }
+          });
+          setTodaysPackages(res.data);
       } catch (err) { console.error("Orders Error:", err); }
   };
 
-  // Load all data on mount
   useEffect(() => {
       const loadAll = async () => {
           setIsLoading(true);
@@ -168,23 +169,28 @@ const Kitchen = () => {
 
   const theme = { bg: darkMode ? 'bg-[#0c0c0c]' : 'bg-[#FAFAFA]', cardBg: darkMode ? 'bg-[#141414]' : 'bg-white', text: darkMode ? 'text-stone-200' : 'text-stone-900', subText: darkMode ? 'text-stone-500' : 'text-stone-500', border: darkMode ? 'border-stone-800' : 'border-stone-300', hoverBg: 'hover:bg-[#C9A25D]/5' };
 
+  // --- 4. ADD INGREDIENT (POST) ---
   const handleAddIngredient = async (newItem) => {
     try {
-        const res = await fetch(`${API_BASE}/inventory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newItem) });
-        if (!res.ok) throw new Error('Server Error');
+        // FIX: Use api.post
+        await api.post('/kitchen/inventory', newItem);
+        
         await fetchInventory(); 
         setToast({ show: true, message: `${newItem.name} added.` });
         setTimeout(() => setToast({ show: false, message: "" }), 3000);
     } catch (err) { alert("Error adding item."); }
   };
   
+  // --- 5. UPDATE INGREDIENT (PUT) ---
   const handleDeduct = async (uniqueKey, ingredientName, amount) => {
       if (deductedItems.includes(uniqueKey)) return;
       const targetIngredient = ingredients.find(i => i.name === ingredientName);
       if (targetIngredient) {
           const newAmount = Math.max(0, targetIngredient.current - amount);
           try {
-              await fetch(`${API_BASE}/inventory/${targetIngredient.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current: newAmount }) });
+              // FIX: Use api.put
+              await api.put(`/kitchen/inventory/${targetIngredient.id}`, { current: newAmount });
+              
               setIngredients(prev => prev.map(item => item.id === targetIngredient.id ? { ...item, current: newAmount } : item));
               setDeductedItems(prev => [...prev, uniqueKey]);
           } catch (err) { console.error(err); }
@@ -194,7 +200,10 @@ const Kitchen = () => {
   const handleManualInput = async (id, value) => {
       const num = parseFloat(value) || 0;
       setIngredients(prev => prev.map(item => item.id === id ? { ...item, current: num } : item));
-      try { await fetch(`${API_BASE}/inventory/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current: num }) }); } catch (err) { console.error(err); }
+      try { 
+          // FIX: Use api.put
+          await api.put(`/kitchen/inventory/${id}`, { current: num }); 
+      } catch (err) { console.error(err); }
   };
 
   const handleIncrement = async (id, amount) => {
@@ -202,7 +211,10 @@ const Kitchen = () => {
     if(item) {
         const newVal = Math.max(0, item.current + amount);
         setIngredients(prev => prev.map(i => i.id === id ? { ...i, current: newVal } : i));
-        try { await fetch(`${API_BASE}/inventory/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current: newVal }) }); } catch (err) { console.error(err); }
+        try { 
+            // FIX: Use api.put
+            await api.put(`/kitchen/inventory/${id}`, { current: newVal });
+        } catch (err) { console.error(err); }
     }
   };
 
@@ -262,7 +274,6 @@ const Kitchen = () => {
                                 {todaysPackages.length === 0 ? (<div className={`p-12 text-center border border-dashed ${theme.border} rounded-sm`}><p className={theme.subText}>No active packages booked for {todaysDateDisplay}.</p></div>) : (
                                     <div className="grid grid-cols-1 gap-12">
                                         {todaysPackages.map((booking) => {
-                                            // --- USE DYNAMIC MENU FROM DB ---
                                             const menu = packageMenus[booking.packageId] || { name: "Standard Package", items: [] };
                                             return (
                                                 <div key={booking.id} className={`border ${theme.border} ${theme.cardBg} rounded-sm overflow-hidden flex flex-col md:flex-row shadow-sm h-[600px]`}>

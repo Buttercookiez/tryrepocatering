@@ -1,6 +1,16 @@
 // src/api/api.js
+import axios from 'axios';
 
-// In Create React App, we use process.env
-const BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+// 1. Define your BACKEND URL here.
+// IMPORTANT: Do NOT put a slash '/' at the very end.
+const BASE_URL = 'https://tryrepocatering.vercel.app/api'; 
 
-export default BASE_URL;
+const api = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true, // Needed for cookies/sessions if you use them
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export default api;
