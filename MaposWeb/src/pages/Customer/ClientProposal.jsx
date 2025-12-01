@@ -2,13 +2,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Loader2, Check, Calendar, Users, MapPin, 
-  ArrowRight, Utensils, Moon, Sun, ChevronDown, 
-  Plus, CheckCircle, ArrowLeft, FileText, Download, User, Info, CreditCard
+  Utensils, Moon, Sun, ChevronDown, 
+  Plus, CheckCircle, FileText, Download, User, Info
 } from 'lucide-react';
+
+// --- 1. IMPORT API INSTANCE ---
+import api from '../../api/api'; 
 import { getBookingByRefId, acceptProposal } from '../../api/bookingService';
 import html2pdf from 'html2pdf.js';
-
-const API_BASE_KITCHEN = 'http://localhost:5000/api/kitchen';
 
 // Fallback Image Logic
 const PLACEHOLDER_IMAGES = [
@@ -28,7 +29,7 @@ const ClientProposal = () => {
   
   // --- DYNAMIC DATA ---
   const [packages, setPackages] = useState([]);
-  const [addOnsList, setAddOnsList] = useState([]); // <--- NEW STATE FOR ADD-ONS
+  const [addOnsList, setAddOnsList] = useState([]); 
 
   const [viewMode, setViewMode] = useState("SELECTION"); 
   const [selectedPkgId, setSelectedPkgId] = useState(null);
@@ -45,7 +46,7 @@ const ClientProposal = () => {
     else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); document.body.style.backgroundColor = '#FAFAFA'; }
   }, [darkMode]);
 
-  // --- FETCH ALL DATA ---
+  // --- FETCH ALL DATA (FIXED) ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,9 +64,10 @@ const ClientProposal = () => {
           guests: 150
         });
 
-        // 2. Fetch Packages
-        const menuRes = await fetch(`${API_BASE_KITCHEN}/menus`);
-        const menuData = await menuRes.json();
+        // 2. Fetch Packages (Replaced fetch with api.get)
+        const menuRes = await api.get('/kitchen/menus');
+        const menuData = menuRes.data;
+        
         const formattedPackages = Object.values(menuData).map((pkg) => ({
             id: pkg.packageId,
             name: pkg.name,
@@ -85,10 +87,9 @@ const ClientProposal = () => {
         formattedPackages.sort((a, b) => a.price - b.price);
         setPackages(formattedPackages);
 
-        // 3. Fetch Add-Ons
-        const addonsRes = await fetch(`${API_BASE_KITCHEN}/addons`);
-        const addonsData = await addonsRes.json();
-        setAddOnsList(addonsData);
+        // 3. Fetch Add-Ons (Replaced fetch with api.get)
+        const addonsRes = await api.get('/kitchen/addons');
+        setAddOnsList(addonsRes.data);
 
       } catch (err) {
         console.error("Error loading data:", err);
@@ -121,7 +122,6 @@ const ClientProposal = () => {
   const packageTotal = selectedPackage ? (selectedPackage.price * guestCount) : 0;
   
   const addOnsTotal = selectedAddOns.reduce((total, id) => {
-    // FIX: Find item in state 'addOnsList'
     const item = addOnsList.find(a => a.id === id);
     if (!item) return total;
     return total + (item.type === 'per_head' ? item.price * guestCount : item.price);
@@ -197,7 +197,6 @@ const ClientProposal = () => {
                         {selectedAddOns.length > 0 ? (
                             <div className="space-y-3 pl-2">
                                 {selectedAddOns.map(id => {
-                                    // FIX: Find from state
                                     const item = addOnsList.find(a => a.id === id);
                                     return item ? (
                                         <div key={id} className="flex justify-between text-sm items-center">
@@ -262,7 +261,6 @@ const ClientProposal = () => {
 
       <div className="max-w-7xl mx-auto px-6 -mt-10 relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* DYNAMIC PACKAGES FROM DB */}
           {packages.map((pkg) => {
             const isSelected = selectedPkgId === pkg.id;
             return (
@@ -295,7 +293,6 @@ const ClientProposal = () => {
               <div className="mt-24 pt-16 border-t border-dashed border-stone-600">
                   <div className="text-center mb-12"><span className="text-[#C9A25D] text-[10px] uppercase tracking-[0.3em] font-bold block mb-4">Enhance Your Event</span><h2 className={`font-serif text-4xl ${theme.text}`}>Premium Add-ons</h2></div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {/* Use addOnsList state instead of hardcoded constant */}
                       {addOnsList.length > 0 ? addOnsList.map((addon) => {
                           const isActive = selectedAddOns.includes(addon.id);
                           return (
